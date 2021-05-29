@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jsoar.kernel.Agent;
@@ -62,7 +61,22 @@ public class LogCommand extends PicocliSoarCommand {
     private SoarCommandContext context;
     private static final String SOURCE_LOCATION_SEPARATOR = ".";
 
-    private final List<Action<Log>> actions;
+    /*
+     * Contains list of actions that can be performed by this command
+     */
+    private static final List<Action<Log>> ACTIONS = Stream.of(
+        new AddLogger(),
+        new EnableLog(),
+        new DisableLog(),
+        new InitializeLogger(),
+        new SetStrictMode(),
+        new EnableAbbreviate(),
+        new SetEchoMode(),
+        new SetSourceLocationMethod(),
+        new SetLogLevel(),
+        new LogMessage())
+        .collect(Collectors.toList());
+
 
     @Spec
     private CommandSpec spec; // injected by picocli
@@ -73,19 +87,20 @@ public class LogCommand extends PicocliSoarCommand {
       this.interpreter = interpreter;
       this.context = context;
 
-      // Initialize sorted set of actions which could be performed by this command
-      actions = Stream.of(
-          new AddLogger(),
-          new EnableLog(),
-          new DisableLog(),
-          new InitializeLogger(),
-          new SetStrictMode(),
-          new EnableAbbreviate(),
-          new SetEchoMode(),
-          new SetSourceLocationMethod(),
-          new SetLogLevel(),
-          new LogMessase()
-      ).collect(Collectors.toList());
+//      // Initialize list of actions which could be performed by this command
+//      actions =
+//          Stream.of(
+//                  new AddLogger(),
+//                  new EnableLog(),
+//                  new DisableLog(),
+//                  new InitializeLogger(),
+//                  new SetStrictMode(),
+//                  new EnableAbbreviate(),
+//                  new SetEchoMode(),
+//                  new SetSourceLocationMethod(),
+//                  new SetLogLevel(),
+//                  new LogMessage())
+//              .collect(Collectors.toList());
     }
 
     @Option(
@@ -155,7 +170,7 @@ public class LogCommand extends PicocliSoarCommand {
     @Override
     public void run() {
       // Traverse list of actions until successfully handled
-      for(Action action: actions) {
+      for (Action action : ACTIONS) {
         if (action.execute(this)) {
           break;
         }
@@ -395,16 +410,10 @@ public class LogCommand extends PicocliSoarCommand {
         String mode = enabled ? "strict" : "non-strict";
 
         if (context.logManager.isStrict() == enabled) {
-          context.agent
-              .getPrinter()
-              .startNewLine()
-              .print("Logger already in {} mode.", mode);
+          context.agent.getPrinter().startNewLine().print("Logger already in {} mode.", mode);
         } else {
           context.logManager.setStrict(enabled);
-          context.agent
-              .getPrinter()
-              .startNewLine()
-              .print("Logger set to {} mode.", mode);
+          context.agent.getPrinter().startNewLine().print("Logger set to {} mode.", mode);
         }
 
         handled = true;
@@ -421,15 +430,16 @@ public class LogCommand extends PicocliSoarCommand {
     @Override
     public boolean execute(Log context) {
       var handled = false;
+
       if (context.abbreviate.isPresent()) {
         boolean enabled = context.abbreviate.get();
         context.logManager.setAbbreviate(enabled);
-        context.agent
+        context
+            .agent
             .getPrinter()
             .startNewLine()
             .print("Logger using {} paths.", enabled ? "abbreviated" : "full");
         handled = true;
-
       }
       return handled;
     }
@@ -466,7 +476,8 @@ public class LogCommand extends PicocliSoarCommand {
         // log --source disk/stack/none
         var sourceLocationMethod = context.source.get();
         context.logManager.setSourceLocationMethod(sourceLocationMethod);
-        context.agent
+        context
+            .agent
             .getPrinter()
             .startNewLine()
             .print("Logger source location " + "method set to: " + sourceLocationMethod);
@@ -498,7 +509,7 @@ public class LogCommand extends PicocliSoarCommand {
   /**
    * Action to log message
    */
-  private static final class LogMessase implements Action<Log> {
+  private static final class LogMessage implements Action<Log> {
 
     @Override
     public boolean execute(Log log) {
@@ -524,7 +535,8 @@ public class LogCommand extends PicocliSoarCommand {
           // The user omitted LOGGER-NAME (we know because we just properly parsed the log level).
           loggerName =
               log.getSourceLocation(
-                  log.context, log.logManager.getAbbreviate(),
+                  log.context,
+                  log.logManager.getAbbreviate(),
                   log.logManager.getSourceLocationMethod());
           if (loggerName != null) {
             // Prevent strict mode from biting us.
