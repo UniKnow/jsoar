@@ -64,22 +64,21 @@ public class LogCommand extends PicocliSoarCommand {
     /*
      * Contains list of actions that can be performed by this command
      */
-    private static final List<Action<Log>> ACTIONS = Stream.of(
-        new AddLogger(),
-        new EnableLog(),
-        new DisableLog(),
-        new InitializeLogger(),
-        new SetStrictMode(),
-        new EnableAbbreviate(),
-        new SetEchoMode(),
-        new SetSourceLocationMethod(),
-        new SetLogLevel(),
-        new LogMessage())
-        .collect(Collectors.toList());
+    private static final List<Action<Log>> ACTIONS =
+        Stream.of(
+                new AddLogger(),
+                new EnableLog(),
+                new DisableLog(),
+                new InitializeLogger(),
+                new SetStrictMode(),
+                new EnableAbbreviate(),
+                new SetEchoMode(),
+                new SetSourceLocationMethod(),
+                new SetLogLevel(),
+                new LogMessage())
+            .collect(Collectors.toList());
 
-
-    @Spec
-    private CommandSpec spec; // injected by picocli
+    @Spec private CommandSpec spec; // injected by picocli
 
     public Log(Agent agent, SoarCommandInterpreter interpreter, SoarCommandContext context) {
       this.agent = agent;
@@ -87,20 +86,20 @@ public class LogCommand extends PicocliSoarCommand {
       this.interpreter = interpreter;
       this.context = context;
 
-//      // Initialize list of actions which could be performed by this command
-//      actions =
-//          Stream.of(
-//                  new AddLogger(),
-//                  new EnableLog(),
-//                  new DisableLog(),
-//                  new InitializeLogger(),
-//                  new SetStrictMode(),
-//                  new EnableAbbreviate(),
-//                  new SetEchoMode(),
-//                  new SetSourceLocationMethod(),
-//                  new SetLogLevel(),
-//                  new LogMessage())
-//              .collect(Collectors.toList());
+      //      // Initialize list of actions which could be performed by this command
+      //      actions =
+      //          Stream.of(
+      //                  new AddLogger(),
+      //                  new EnableLog(),
+      //                  new DisableLog(),
+      //                  new InitializeLogger(),
+      //                  new SetStrictMode(),
+      //                  new EnableAbbreviate(),
+      //                  new SetEchoMode(),
+      //                  new SetSourceLocationMethod(),
+      //                  new SetLogLevel(),
+      //                  new LogMessage())
+      //              .collect(Collectors.toList());
     }
 
     @Option(
@@ -170,7 +169,7 @@ public class LogCommand extends PicocliSoarCommand {
     @Override
     public void run() {
       // Traverse list of actions until successfully handled
-      for (Action action : ACTIONS) {
+      for (Action<Log> action : ACTIONS) {
         if (action.execute(this)) {
           break;
         }
@@ -292,9 +291,7 @@ public class LogCommand extends PicocliSoarCommand {
     }
   }
 
-  /**
-   * Action to add specified logger.
-   */
+  /** Action to add specified logger. */
   private static class AddLogger implements Action<Log> {
 
     @Override
@@ -313,9 +310,7 @@ public class LogCommand extends PicocliSoarCommand {
     }
   }
 
-  /**
-   * Action to enable log.
-   */
+  /** Action to enable log. */
   private static class EnableLog implements Action<Log> {
 
     @Override
@@ -343,9 +338,7 @@ public class LogCommand extends PicocliSoarCommand {
     }
   }
 
-  /**
-   * Action to disable log.
-   */
+  /** Action to disable log. */
   private static class DisableLog implements Action<Log> {
 
     @Override
@@ -373,9 +366,7 @@ public class LogCommand extends PicocliSoarCommand {
     }
   }
 
-  /**
-   * Action to initialize logger.
-   */
+  /** Action to initialize logger. */
   private static class InitializeLogger implements Action<Log> {
 
     @Override
@@ -391,9 +382,7 @@ public class LogCommand extends PicocliSoarCommand {
     }
   }
 
-  /**
-   * Action to set strict mode
-   */
+  /** Action to set strict mode */
   private static class SetStrictMode implements Action<Log> {
 
     /**
@@ -422,9 +411,7 @@ public class LogCommand extends PicocliSoarCommand {
     }
   }
 
-  /**
-   * Action to enable abbreviate
-   */
+  /** Action to enable abbreviate */
   private static final class EnableAbbreviate implements Action<Log> {
 
     @Override
@@ -445,9 +432,7 @@ public class LogCommand extends PicocliSoarCommand {
     }
   }
 
-  /**
-   * Action to set echo mode
-   */
+  /** Action to set echo mode */
   private static final class SetEchoMode implements Action<Log> {
 
     @Override
@@ -464,9 +449,7 @@ public class LogCommand extends PicocliSoarCommand {
     }
   }
 
-  /**
-   * Action to set source location method
-   */
+  /** Action to set source location method */
   private static final class SetSourceLocationMethod implements Action<Log> {
 
     @Override
@@ -487,9 +470,7 @@ public class LogCommand extends PicocliSoarCommand {
     }
   }
 
-  /**
-   * Action to set log level
-   */
+  /** Action to set log level */
   private static final class SetLogLevel implements Action<Log> {
 
     @Override
@@ -506,9 +487,7 @@ public class LogCommand extends PicocliSoarCommand {
     }
   }
 
-  /**
-   * Action to log message
-   */
+  /** Action to log message */
   private static final class LogMessage implements Action<Log> {
 
     @Override
