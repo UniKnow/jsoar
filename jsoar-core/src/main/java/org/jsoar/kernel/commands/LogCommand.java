@@ -55,6 +55,275 @@ public class LogCommand extends PicocliSoarCommand {
       subcommands = {HelpCommand.class})
   public static class Log implements Runnable {
 
+    /** Action to add specified logger. */
+    private static class AddLogger implements Action<Log> {
+
+      @Override
+      public boolean execute(final Log context) {
+        if (context.logToAdd == null) {
+          return false;
+        }
+
+        try {
+          context.logManager.addLogger(context.logToAdd);
+        } catch (LoggerException e) {
+          throw new ParameterException(context.spec.commandLine(), e.getMessage(), e);
+        }
+
+        return true;
+      }
+    }
+
+    /** Action to disable log. */
+    private static class DisableLog implements Action<Log> {
+
+      @Override
+      public boolean execute(final Log context) {
+        if (context.disable) {
+          if (context.params == null) {
+            if (!context.logManager.isActive()) {
+              context.agent.getPrinter().startNewLine().print("Logging already disabled.");
+            } else {
+              context.logManager.setActive(false);
+              context.agent.getPrinter().startNewLine().print("Logging disable.");
+            }
+          } else {
+            try {
+              String loggerName = context.params[0];
+              context.logManager.disableLogger(loggerName);
+              context.agent.getPrinter().startNewLine().print("Logger [{}] disabled.", loggerName);
+            } catch (LoggerException e) {
+              context.agent.getPrinter().startNewLine().print(e.getMessage());
+            }
+          }
+          return true;
+        }
+        return false;
+      }
+    }
+
+    /** Action to initialize logger. */
+    private static class InitializeLogger implements Action<Log> {
+
+      @Override
+      public boolean execute(final Log log) {
+        var handled = false;
+        if (log.init) {
+          // log --init
+          log.logManager.init();
+          log.agent.getPrinter().startNewLine().print("Log manager re-initialized.");
+          handled = true;
+        }
+        return handled;
+      }
+    }
+
+    /** Action to set strict mode */
+    private static class SetStrictMode implements Action<Log> {
+
+      /**
+       * Executes action
+       *
+       * @param context Context in which the action needs to be performed
+       * @return true if action has executed; false otherwise
+       */
+      @Override
+      public boolean execute(final Log context) {
+        var handled = false;
+        if (context.strict.isPresent()) {
+          boolean enabled = context.strict.get();
+          String mode = enabled ? "strict" : "non-strict";
+
+          if (context.logManager.isStrict() == enabled) {
+            context.agent.getPrinter().startNewLine().print("Logger already in {} mode.", mode);
+          } else {
+            context.logManager.setStrict(enabled);
+            context.agent.getPrinter().startNewLine().print("Logger set to {} mode.", mode);
+          }
+
+          handled = true;
+        }
+        return handled;
+      }
+    }
+
+    /** Action to enable log. */
+    private static class EnableLog implements Action<Log> {
+
+      @Override
+      public boolean execute(final Log context) {
+        if (context.enable) {
+          if (context.params == null) {
+            if (context.logManager.isActive()) {
+              context.agent.getPrinter().startNewLine().print("Logging already enabled.");
+            } else {
+              context.logManager.setActive(true);
+              context.agent.getPrinter().startNewLine().print("Logging enabled.");
+            }
+          } else {
+            try {
+              String loggerName = context.params[0];
+              context.logManager.enableLogger(loggerName);
+              context.agent.getPrinter().startNewLine().print("Logger [{}] enabled.", loggerName);
+            } catch (LoggerException e) {
+              context.agent.getPrinter().startNewLine().print(e.getMessage());
+            }
+          }
+          return true;
+        }
+        return false;
+      }
+    }
+
+    /** Action to enable abbreviate */
+    private static final class EnableAbbreviate implements Action<Log> {
+
+      @Override
+      public boolean execute(final Log context) {
+        var handled = false;
+
+        if (context.abbreviate.isPresent()) {
+          boolean enabled = context.abbreviate.get();
+          context.logManager.setAbbreviate(enabled);
+          context
+              .agent
+              .getPrinter()
+              .startNewLine()
+              .print("Logger using {} paths.", enabled ? "abbreviated" : "full");
+          handled = true;
+        }
+        return handled;
+      }
+    }
+
+    /** Action to set echo mode */
+    private static final class SetEchoMode implements Action<Log> {
+
+      @Override
+      public boolean execute(final Log context) {
+        var handled = false;
+        if (context.echo.isPresent()) {
+          // log --echo on/simple/off
+          var echoMode = context.echo.get();
+          context.logManager.setEchoMode(echoMode);
+          context.agent.getPrinter().startNewLine().print("Logger echo mode set to: " + echoMode);
+          handled = true;
+        }
+        return handled;
+      }
+    }
+
+    /** Action to set source location method */
+    private static final class SetSourceLocationMethod implements Action<Log> {
+
+      @Override
+      public boolean execute(final Log context) {
+        var handled = false;
+        if (context.source.isPresent()) {
+          // log --source disk/stack/none
+          var sourceLocationMethod = context.source.get();
+          context.logManager.setSourceLocationMethod(sourceLocationMethod);
+          context
+              .agent
+              .getPrinter()
+              .startNewLine()
+              .print("Logger source location " + "method set to: " + sourceLocationMethod);
+          handled = true;
+        }
+        return handled;
+      }
+    }
+
+    /** Action to set log level */
+    private static final class SetLogLevel implements Action<Log> {
+
+      @Override
+      public boolean execute(final Log context) {
+        var handled = false;
+        if (context.level.isPresent()) {
+          // log --level trace/debug/info/warn/error
+          var logLevel = context.level.get();
+          context.logManager.setLogLevel(logLevel);
+          context.agent.getPrinter().startNewLine().print("Logger level set to: " + logLevel);
+          handled = true;
+        }
+        return handled;
+      }
+    }
+
+    /** Action to log message */
+    private static final class LogMessage implements Action<Log> {
+
+      @Override
+      public boolean execute(final Log log) {
+        if (log.params == null) {
+          // log
+          log.agent.getPrinter().startNewLine().print(log.logManager.getLoggerStatus());
+        } else {
+          // log <loggerName> <loggingLevel> <[message]>
+          String loggerName;
+          LogLevel logLevel;
+          List<String> parameters;
+
+          if (log.params.length == 1) {
+            throw new ParameterException(
+                log.spec.commandLine(), "Unknown command: " + log.params[0]);
+          }
+
+          try {
+            // Did the user omit the LOGGER-NAME?
+            // If so, the first argument will by the log level.
+            // So let's try to cast the first argument to a log level.
+            logLevel = LogManager.LogLevel.fromString(log.params[0]);
+
+            // The user omitted LOGGER-NAME (we know because we just properly parsed the log level).
+            loggerName =
+                log.getSourceLocation(
+                    log.context,
+                    log.logManager.getAbbreviate(),
+                    log.logManager.getSourceLocationMethod());
+            if (loggerName != null) {
+              // Prevent strict mode from biting us.
+              if (!log.logManager.hasLogger(loggerName)) {
+                try {
+                  log.logManager.addLogger(loggerName);
+                } catch (LoggerException e) {
+                  throw new ParameterException(log.spec.commandLine(), e.getMessage(), e);
+                }
+              }
+            }
+
+            if (loggerName == null) {
+              loggerName = "default";
+            }
+
+            parameters = Arrays.asList(Arrays.copyOfRange(log.params, 1, log.params.length));
+          } catch (IllegalArgumentException e) {
+            // The user specified LOGGER-NAME.
+            loggerName = log.params[0];
+
+            try {
+              // Make sure that the log-level is valid.
+              logLevel = LogManager.LogLevel.fromString(log.params[1]);
+            } catch (IllegalArgumentException ee) {
+              throw new ParameterException(
+                  log.spec.commandLine(), "Unknown log-level value: " + log.params[1], ee);
+            }
+
+            parameters = Arrays.asList(Arrays.copyOfRange(log.params, 2, log.params.length));
+          }
+
+          // Log the message.
+          try {
+            log.logManager.log(loggerName, logLevel, parameters, log.collapse);
+          } catch (LoggerException e) {
+            throw new ParameterException(log.spec.commandLine(), e.getMessage(), e);
+          }
+        }
+        return true;
+      }
+    }
+
     private final Agent agent;
     private final LogManager logManager;
     private final SoarCommandInterpreter interpreter;
@@ -288,274 +557,6 @@ public class LogCommand extends PicocliSoarCommand {
       result += fileParts[fileParts.length - 1];
 
       return result;
-    }
-  }
-
-  /** Action to add specified logger. */
-  private static class AddLogger implements Action<Log> {
-
-    @Override
-    public boolean execute(Log context) {
-      if (context.logToAdd == null) {
-        return false;
-      }
-
-      try {
-        context.logManager.addLogger(context.logToAdd);
-      } catch (LoggerException e) {
-        throw new ParameterException(context.spec.commandLine(), e.getMessage(), e);
-      }
-
-      return true;
-    }
-  }
-
-  /** Action to enable log. */
-  private static class EnableLog implements Action<Log> {
-
-    @Override
-    public boolean execute(final Log context) {
-      if (context.enable) {
-        if (context.params == null) {
-          if (context.logManager.isActive()) {
-            context.agent.getPrinter().startNewLine().print("Logging already enabled.");
-          } else {
-            context.logManager.setActive(true);
-            context.agent.getPrinter().startNewLine().print("Logging enabled.");
-          }
-        } else {
-          try {
-            String loggerName = context.params[0];
-            context.logManager.enableLogger(loggerName);
-            context.agent.getPrinter().startNewLine().print("Logger [{}] enabled.", loggerName);
-          } catch (LoggerException e) {
-            context.agent.getPrinter().startNewLine().print(e.getMessage());
-          }
-        }
-        return true;
-      }
-      return false;
-    }
-  }
-
-  /** Action to disable log. */
-  private static class DisableLog implements Action<Log> {
-
-    @Override
-    public boolean execute(final Log context) {
-      if (context.disable) {
-        if (context.params == null) {
-          if (!context.logManager.isActive()) {
-            context.agent.getPrinter().startNewLine().print("Logging already disabled.");
-          } else {
-            context.logManager.setActive(false);
-            context.agent.getPrinter().startNewLine().print("Logging disable.");
-          }
-        } else {
-          try {
-            String loggerName = context.params[0];
-            context.logManager.disableLogger(loggerName);
-            context.agent.getPrinter().startNewLine().print("Logger [{}] disabled.", loggerName);
-          } catch (LoggerException e) {
-            context.agent.getPrinter().startNewLine().print(e.getMessage());
-          }
-        }
-        return true;
-      }
-      return false;
-    }
-  }
-
-  /** Action to initialize logger. */
-  private static class InitializeLogger implements Action<Log> {
-
-    @Override
-    public boolean execute(Log log) {
-      var handled = false;
-      if (log.init) {
-        // log --init
-        log.logManager.init();
-        log.agent.getPrinter().startNewLine().print("Log manager re-initialized.");
-        handled = true;
-      }
-      return handled;
-    }
-  }
-
-  /** Action to set strict mode */
-  private static class SetStrictMode implements Action<Log> {
-
-    /**
-     * Executes action
-     *
-     * @param context Context in which the action needs to be performed
-     * @return true if action has executed; false otherwise
-     */
-    @Override
-    public boolean execute(Log context) {
-      var handled = false;
-      if (context.strict.isPresent()) {
-        boolean enabled = context.strict.get();
-        String mode = enabled ? "strict" : "non-strict";
-
-        if (context.logManager.isStrict() == enabled) {
-          context.agent.getPrinter().startNewLine().print("Logger already in {} mode.", mode);
-        } else {
-          context.logManager.setStrict(enabled);
-          context.agent.getPrinter().startNewLine().print("Logger set to {} mode.", mode);
-        }
-
-        handled = true;
-      }
-      return handled;
-    }
-  }
-
-  /** Action to enable abbreviate */
-  private static final class EnableAbbreviate implements Action<Log> {
-
-    @Override
-    public boolean execute(Log context) {
-      var handled = false;
-
-      if (context.abbreviate.isPresent()) {
-        boolean enabled = context.abbreviate.get();
-        context.logManager.setAbbreviate(enabled);
-        context
-            .agent
-            .getPrinter()
-            .startNewLine()
-            .print("Logger using {} paths.", enabled ? "abbreviated" : "full");
-        handled = true;
-      }
-      return handled;
-    }
-  }
-
-  /** Action to set echo mode */
-  private static final class SetEchoMode implements Action<Log> {
-
-    @Override
-    public boolean execute(Log context) {
-      var handled = false;
-      if (context.echo.isPresent()) {
-        // log --echo on/simple/off
-        var echoMode = context.echo.get();
-        context.logManager.setEchoMode(echoMode);
-        context.agent.getPrinter().startNewLine().print("Logger echo mode set to: " + echoMode);
-        handled = true;
-      }
-      return handled;
-    }
-  }
-
-  /** Action to set source location method */
-  private static final class SetSourceLocationMethod implements Action<Log> {
-
-    @Override
-    public boolean execute(Log context) {
-      var handled = false;
-      if (context.source.isPresent()) {
-        // log --source disk/stack/none
-        var sourceLocationMethod = context.source.get();
-        context.logManager.setSourceLocationMethod(sourceLocationMethod);
-        context
-            .agent
-            .getPrinter()
-            .startNewLine()
-            .print("Logger source location " + "method set to: " + sourceLocationMethod);
-        handled = true;
-      }
-      return handled;
-    }
-  }
-
-  /** Action to set log level */
-  private static final class SetLogLevel implements Action<Log> {
-
-    @Override
-    public boolean execute(Log context) {
-      var handled = false;
-      if (context.level.isPresent()) {
-        // log --level trace/debug/info/warn/error
-        var logLevel = context.level.get();
-        context.logManager.setLogLevel(logLevel);
-        context.agent.getPrinter().startNewLine().print("Logger level set to: " + logLevel);
-        handled = true;
-      }
-      return handled;
-    }
-  }
-
-  /** Action to log message */
-  private static final class LogMessage implements Action<Log> {
-
-    @Override
-    public boolean execute(Log log) {
-      if (log.params == null) {
-        // log
-        log.agent.getPrinter().startNewLine().print(log.logManager.getLoggerStatus());
-      } else {
-        // log <loggerName> <loggingLevel> <[message]>
-        String loggerName;
-        LogLevel logLevel;
-        List<String> parameters;
-
-        if (log.params.length == 1) {
-          throw new ParameterException(log.spec.commandLine(), "Unknown command: " + log.params[0]);
-        }
-
-        try {
-          // Did the user omit the LOGGER-NAME?
-          // If so, the first argument will by the log level.
-          // So let's try to cast the first argument to a log level.
-          logLevel = LogManager.LogLevel.fromString(log.params[0]);
-
-          // The user omitted LOGGER-NAME (we know because we just properly parsed the log level).
-          loggerName =
-              log.getSourceLocation(
-                  log.context,
-                  log.logManager.getAbbreviate(),
-                  log.logManager.getSourceLocationMethod());
-          if (loggerName != null) {
-            // Prevent strict mode from biting us.
-            if (!log.logManager.hasLogger(loggerName)) {
-              try {
-                log.logManager.addLogger(loggerName);
-              } catch (LoggerException e) {
-                throw new ParameterException(log.spec.commandLine(), e.getMessage(), e);
-              }
-            }
-          }
-
-          if (loggerName == null) {
-            loggerName = "default";
-          }
-
-          parameters = Arrays.asList(Arrays.copyOfRange(log.params, 1, log.params.length));
-        } catch (IllegalArgumentException e) {
-          // The user specified LOGGER-NAME.
-          loggerName = log.params[0];
-
-          try {
-            // Make sure that the log-level is valid.
-            logLevel = LogManager.LogLevel.fromString(log.params[1]);
-          } catch (IllegalArgumentException ee) {
-            throw new ParameterException(
-                log.spec.commandLine(), "Unknown log-level value: " + log.params[1], ee);
-          }
-
-          parameters = Arrays.asList(Arrays.copyOfRange(log.params, 2, log.params.length));
-        }
-
-        // Log the message.
-        try {
-          log.logManager.log(loggerName, logLevel, parameters, log.collapse);
-        } catch (LoggerException e) {
-          throw new ParameterException(log.spec.commandLine(), e.getMessage(), e);
-        }
-      }
-      return true;
     }
   }
 }
