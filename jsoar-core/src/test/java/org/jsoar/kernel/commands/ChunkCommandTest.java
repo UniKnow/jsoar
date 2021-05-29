@@ -1,6 +1,5 @@
 package org.jsoar.kernel.commands;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -37,28 +36,24 @@ public class ChunkCommandTest {
 
   @Test
   public void testEnableChunking() throws SoarException {
-    chunkCommand.execute(
-        DefaultSoarCommandContext.empty(), new String[]{"chunk", "--enable"});
+    chunkCommand.execute(DefaultSoarCommandContext.empty(), new String[] {"chunk", "--enable"});
 
     assertTrue(agent.getProperties().get(SoarProperties.LEARNING_ON));
   }
 
   @Test
   public void testDisableChunking() throws SoarException {
-    chunkCommand.execute(
-        DefaultSoarCommandContext.empty(), new String[]{"chunk", "--disable"});
+    chunkCommand.execute(DefaultSoarCommandContext.empty(), new String[] {"chunk", "--disable"});
 
     assertFalse(agent.getProperties().get(SoarProperties.LEARNING_ON));
   }
 
   @Test
   public void testPrintValueChunkSetting() throws SoarException {
-    chunkCommand.execute(
-        DefaultSoarCommandContext.empty(), new String[]{"chunk"});
+    chunkCommand.execute(DefaultSoarCommandContext.empty(), new String[] {"chunk"});
 
     String printedMessage = outputWriter.toString();
     assertNotNull(printedMessage);
     assertTrue(printedMessage.matches("\nThe current chunk setting is: .*"));
   }
-
 }

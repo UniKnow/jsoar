@@ -354,86 +354,71 @@ public class LogCommand extends PicocliSoarCommand {
       this.logManager = agent.getLogManager();
       this.interpreter = interpreter;
       this.context = context;
-
-      //      // Initialize list of actions which could be performed by this command
-      //      actions =
-      //          Stream.of(
-      //                  new AddLogger(),
-      //                  new EnableLog(),
-      //                  new DisableLog(),
-      //                  new InitializeLogger(),
-      //                  new SetStrictMode(),
-      //                  new EnableAbbreviate(),
-      //                  new SetEchoMode(),
-      //                  new SetSourceLocationMethod(),
-      //                  new SetLogLevel(),
-      //                  new LogMessage())
-      //              .collect(Collectors.toList());
     }
 
     @Option(
         names = {"-a", "--add"},
         description = "Adds a logger with the given name")
-    String logToAdd;
+    private String logToAdd;
 
     @Option(
         names = {"-e", "--on", "--enable", "--yes"},
         defaultValue = "false",
         description = "Enables logging")
-    boolean enable;
+    private boolean enable;
 
     @Option(
         names = {"-d", "--off", "--disable", "--no"},
         defaultValue = "false",
         description = "Disables logging")
-    boolean disable;
+    private boolean disable;
 
     @Option(
         names = {"-s", "--strict"},
         arity = "1",
         description = "Enables or disables logging strictness",
         converter = BooleanTypeConverter.class)
-    Optional<Boolean> strict;
+    private Optional<Boolean> strict;
 
     @Option(
         names = {"-E", "--echo"},
         description = "Sets logger echo mode to on, simple, or off")
-    Optional<EchoMode> echo;
+    private Optional<EchoMode> echo;
 
     @Option(
         names = {"-i", "--init"},
         defaultValue = "false",
         description = "Re-initializes log manager")
-    boolean init;
+    private boolean init;
 
     @Option(
         names = {"-c", "--collapse"},
         defaultValue = "false",
         description = "Specifies collapsed logging")
-    boolean collapse;
+    private boolean collapse;
 
     @Option(
         names = {"-l", "--level"},
         description = "Sets the logging level to trace, debug, info, warn, or error")
-    Optional<LogLevel> level;
+    private Optional<LogLevel> level;
 
     @Option(
         names = {"-S", "--source"},
         description = "Sets the logging source to disk, stack, or none")
-    Optional<SourceLocationMethod> source;
+    private Optional<SourceLocationMethod> source;
 
     @Option(
         names = {"-A", "--abbreviate"},
         arity = "1",
         description = "Enables or disables logging abbreviation",
         converter = BooleanTypeConverter.class)
-    Optional<Boolean> abbreviate;
+    private Optional<Boolean> abbreviate;
 
     @Parameters(
         description =
             "The logger to enable/disable or send a message to, "
                 + "the log level, and/or the message to log")
-    String[] params;
+    private String[] params;
 
     @Override
     public void run() {
