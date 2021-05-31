@@ -37,9 +37,9 @@ public class DebugCommand extends PicocliSoarCommand {
       name = "debug",
       description = "Contains low-level technical debugging commands",
       subcommands = {
-          HelpCommand.class,
-          DebugCommand.InternalSymbols.class,
-          DebugCommand.Time.class
+        HelpCommand.class,
+        DebugCommand.InternalSymbols.class,
+        DebugCommand.Time.class
       })
   public static class Debug implements Runnable {
 
@@ -66,8 +66,7 @@ public class DebugCommand extends PicocliSoarCommand {
       subcommands = {HelpCommand.class})
   public static class InternalSymbols implements Runnable {
 
-    @ParentCommand
-    Debug parent; // injected by picocli
+    @ParentCommand Debug parent; // injected by picocli
 
     @Override
     public void run() {
@@ -88,7 +87,12 @@ public class DebugCommand extends PicocliSoarCommand {
       final List<String> symbols = collectSymbolsOfType(all, klass);
       Collections.sort(symbols);
 
-      result.append("--- ").append(klass).append(" (").append(symbols.size()).append(") ---\n")
+      result
+          .append("--- ")
+          .append(klass)
+          .append(" (")
+          .append(symbols.size())
+          .append(") ---\n")
           .append(String.join("\n", symbols))
           .append("\n");
     }
@@ -110,8 +114,7 @@ public class DebugCommand extends PicocliSoarCommand {
       subcommands = {HelpCommand.class})
   public static class Time implements Runnable {
 
-    @ParentCommand
-    Debug parent; // injected by picocli
+    @ParentCommand Debug parent; // injected by picocli
 
     @Parameters(description = "The Soar command")
     String[] command;
