@@ -1,6 +1,7 @@
 package org.jsoar.kernel.commands;
 
-import java.util.ArrayList;
+import static java.util.stream.Collectors.toList;
+
 import java.util.Collections;
 import java.util.List;
 import org.jsoar.kernel.Agent;
@@ -43,8 +44,8 @@ public class DebugCommand extends PicocliSoarCommand {
       })
   public static class Debug implements Runnable {
 
-    private Agent agent;
-    private SymbolFactoryImpl syms;
+    private final Agent agent;
+    private final SymbolFactoryImpl syms;
 
     public Debug(Agent agent) {
       this.agent = agent;
@@ -98,13 +99,10 @@ public class DebugCommand extends PicocliSoarCommand {
     }
 
     private <T extends Symbol> List<String> collectSymbolsOfType(List<Symbol> in, Class<T> klass) {
-      final List<String> result = new ArrayList<>();
-      for (Symbol s : in) {
-        if (klass.isInstance(s)) {
-          result.add(s.toString());
-        }
-      }
-      return result;
+      return in.stream()
+          .filter(klass::isInstance)
+          .map(Symbol::toString)
+          .collect(toList());
     }
   }
 
