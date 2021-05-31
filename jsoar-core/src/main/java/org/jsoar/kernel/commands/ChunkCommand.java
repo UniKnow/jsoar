@@ -31,11 +31,8 @@ public class ChunkCommand extends PicocliSoarCommand {
      * Contains list of actions that can be performed by this command
      */
     private static final List<Action<Chunk>> ACTIONS =
-        Stream.of(
-            new EnableLearning(),
-            new DisableLearning(),
-            new PrintValueLearning()
-        ).collect(Collectors.toList());
+        Stream.of(new EnableLearning(), new DisableLearning(), new PrintValueLearning())
+            .collect(Collectors.toList());
 
     private final Agent agent;
 
@@ -84,7 +81,7 @@ public class ChunkCommand extends PicocliSoarCommand {
 
       @Override
       public boolean execute(Chunk context) {
-        var handled =false;
+        var handled = false;
 
         if (context.disable) {
           context.agent.getProperties().set(SoarProperties.LEARNING_ON, false);
@@ -99,14 +96,16 @@ public class ChunkCommand extends PicocliSoarCommand {
 
       @Override
       public boolean execute(Chunk context) {
-        context.agent
+        context
+            .agent
             .getPrinter()
             .startNewLine()
             .print(
                 "The current chunk setting is: "
-                    + (Boolean.TRUE.equals(context.agent.getProperties().get(SoarProperties.LEARNING_ON))
-                    ? "enabled"
-                    : "disabled"));
+                    + (Boolean.TRUE.equals(
+                            context.agent.getProperties().get(SoarProperties.LEARNING_ON))
+                        ? "enabled"
+                        : "disabled"));
 
         return true;
       }

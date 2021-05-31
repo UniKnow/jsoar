@@ -16,7 +16,6 @@ import org.jsoar.kernel.symbols.Variable;
 import org.jsoar.util.adaptables.Adaptables;
 import org.jsoar.util.commands.PicocliSoarCommand;
 import org.jsoar.util.timing.DefaultExecutionTimer;
-import org.jsoar.util.timing.ExecutionTimer;
 import org.jsoar.util.timing.WallclockExecutionTimeSource;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.HelpCommand;
@@ -38,11 +37,12 @@ public class DebugCommand extends PicocliSoarCommand {
       name = "debug",
       description = "Contains low-level technical debugging commands",
       subcommands = {
-        HelpCommand.class,
-        DebugCommand.InternalSymbols.class,
-        DebugCommand.Time.class
+          HelpCommand.class,
+          DebugCommand.InternalSymbols.class,
+          DebugCommand.Time.class
       })
   public static class Debug implements Runnable {
+
     private Agent agent;
     private SymbolFactoryImpl syms;
 
@@ -65,12 +65,14 @@ public class DebugCommand extends PicocliSoarCommand {
       description = "Prints symbol table",
       subcommands = {HelpCommand.class})
   public static class InternalSymbols implements Runnable {
-    @ParentCommand Debug parent; // injected by picocli
+
+    @ParentCommand
+    Debug parent; // injected by picocli
 
     @Override
     public void run() {
       final List<Symbol> all = parent.syms.getAllSymbols();
-      final StringBuilder result = new StringBuilder();
+      final var result = new StringBuilder();
       printSymbolsOfType(result, all, Identifier.class);
       printSymbolsOfType(result, all, StringSymbol.class);
       printSymbolsOfType(result, all, IntegerSymbol.class);
@@ -83,17 +85,16 @@ public class DebugCommand extends PicocliSoarCommand {
 
     private <T extends Symbol> void printSymbolsOfType(
         StringBuilder result, List<Symbol> all, Class<T> klass) {
-      final List<String> asStrings = collectSymbolsOfType(all, klass);
-      result.append("--- " + klass + " (" + asStrings.size() + ") ---\n");
-      Collections.sort(asStrings);
-      for (String s : asStrings) {
-        result.append(s);
-        result.append('\n');
-      }
+      final List<String> symbols = collectSymbolsOfType(all, klass);
+      Collections.sort(symbols);
+
+      result.append("--- ").append(klass).append(" (").append(symbols.size()).append(") ---\n")
+          .append(String.join("\n", symbols))
+          .append("\n");
     }
 
     private <T extends Symbol> List<String> collectSymbolsOfType(List<Symbol> in, Class<T> klass) {
-      final List<String> result = new ArrayList<String>();
+      final List<String> result = new ArrayList<>();
       for (Symbol s : in) {
         if (klass.isInstance(s)) {
           result.add(s.toString());
@@ -108,7 +109,9 @@ public class DebugCommand extends PicocliSoarCommand {
       description = "Executes command and prints time spent",
       subcommands = {HelpCommand.class})
   public static class Time implements Runnable {
-    @ParentCommand Debug parent; // injected by picocli
+
+    @ParentCommand
+    Debug parent; // injected by picocli
 
     @Parameters(description = "The Soar command")
     String[] command;
@@ -128,14 +131,14 @@ public class DebugCommand extends PicocliSoarCommand {
       // CSoar does things therefore I'm not including it in the output
       // - ALT
 
-      WallclockExecutionTimeSource real_source = new WallclockExecutionTimeSource();
-      ExecutionTimer real = DefaultExecutionTimer.newInstance(real_source);
+      var real_source = new WallclockExecutionTimeSource();
+      var real = DefaultExecutionTimer.newInstance(real_source);
 
-      String combined = "";
-      for (String s : command) {
-        combined += s + " ";
-      }
-      combined = combined.substring(0, combined.length() - 1);
+      var combined = String.join(" ", command);
+      //      for (String s : command) {
+      //        combined += s + " ";
+      //      }
+      //      combined = combined.substring(0, combined.length() - 1);
 
       // Run the command and record how long it takes to complete
       real.start();
@@ -150,7 +153,7 @@ public class DebugCommand extends PicocliSoarCommand {
       double seconds = real.getTotalSeconds();
 
       if (result == null) {
-        result = new String();
+        result = "";
       }
       result += "(-1s) proc - Note JSoar does not support measuring CPU time at the moment.\n";
       result += "(" + seconds + "s) real\n";

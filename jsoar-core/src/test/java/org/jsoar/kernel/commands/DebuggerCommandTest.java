@@ -20,6 +20,7 @@ public class DebuggerCommandTest {
   public void testDebuggerCommandCallsOpenDebuggerOnAgent() throws Exception {
     final Agent agent = new Agent("testDebuggerCommandCallsOpenDebuggerOnAgent");
     final AtomicBoolean called = new AtomicBoolean(false);
+    // TODO: Replace this by mock
     final DebuggerProvider provider =
         new AbstractDebuggerProvider() {
 
