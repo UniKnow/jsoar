@@ -16,18 +16,18 @@ import org.junit.Test;
 public class ChunkCommandTest {
 
   private Agent agent;
-  private StringWriter outputWriter = new StringWriter();
+  private final StringWriter outputWriter = new StringWriter();
   private ChunkCommand chunkCommand;
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     agent = new Agent();
     agent.getPrinter().addPersistentWriter(outputWriter);
     chunkCommand = new ChunkCommand(agent);
   }
 
   @After
-  public void tearDown() throws Exception {
+  public void tearDown() {
     if (agent != null) {
       agent.dispose();
       agent = null;
