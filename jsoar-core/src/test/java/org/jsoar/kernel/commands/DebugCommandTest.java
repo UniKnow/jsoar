@@ -1,5 +1,6 @@
 package org.jsoar.kernel.commands;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -40,6 +41,16 @@ public class DebugCommandTest {
   }
 
   @Test
+  public void testPrintInfoDebugCommand() throws SoarException {
+    debugCommand.execute(DefaultSoarCommandContext.empty(), new String[] {"debug"});
+
+    String printedMessage = outputWriter.toString();
+    assertEquals(
+        "\nThe 'debug' command " + "contains low-level technical debugging commands.",
+        printedMessage);
+  }
+
+  @Test
   public void testPrintInternalSymbols() throws SoarException {
     debugCommand.execute(
         DefaultSoarCommandContext.empty(), new String[] {"debug", "internal-symbols"});
@@ -52,5 +63,35 @@ public class DebugCommandTest {
     assertTrue(printedMessage.contains("\n--- " + DoubleSymbol.class + " ("));
     assertTrue(printedMessage.contains("\n--- " + Variable.class + " ("));
     assertTrue(printedMessage.contains("\n--- " + JavaSymbol.class + " ("));
+  }
+
+  @Test
+  public void testPrintMissingCommandTimer() throws SoarException {
+    // When timing duration of execution command without specifying command
+    debugCommand.execute(DefaultSoarCommandContext.empty(), new String[] {"debug", "time"});
+    String printedMessage = outputWriter.toString();
+
+    // Then message missing command is printed
+    assertNotNull(printedMessage);
+    assertEquals("\nYou must submit a command that you'd like timed.", printedMessage);
+  }
+
+  @Test
+  public void testPrintTimeSpentExecutingCommand() throws SoarException {
+    // When timing duration of execution command
+    debugCommand.execute(
+        DefaultSoarCommandContext.empty(),
+        new String[] {"debug", "time", "debug", "internal-symbols"});
+    String printedMessage = outputWriter.toString();
+
+    // Then original output of measured command is printed
+    assertNotNull(printedMessage);
+    assertTrue(printedMessage.contains("\n--- " + Identifier.class + " ("));
+
+    // And time spent executing command is printed
+    assertTrue(
+        printedMessage.contains(
+            "(-1s) proc - Note JSoar does not support measuring CPU time at the moment.\n"));
+    assertTrue(printedMessage.contains("s) real\n"));
   }
 }

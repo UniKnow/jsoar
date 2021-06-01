@@ -21,8 +21,9 @@ public class DebuggerCommand extends PicocliSoarCommand {
       name = "debugger",
       description = "Opens the agent's debugger",
       subcommands = {HelpCommand.class})
-  public static class Debugger implements Runnable {
-    private Agent agent;
+  private static class Debugger implements Runnable {
+
+    private final Agent agent;
 
     public Debugger(Agent agent) {
       this.agent = agent;

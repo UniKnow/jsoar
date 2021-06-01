@@ -42,7 +42,7 @@ public class DebugCommand extends PicocliSoarCommand {
         DebugCommand.InternalSymbols.class,
         DebugCommand.Time.class
       })
-  public static class Debug implements Runnable {
+  private static class Debug implements Runnable {
 
     private final Agent agent;
     private final SymbolFactoryImpl syms;
@@ -65,7 +65,7 @@ public class DebugCommand extends PicocliSoarCommand {
       name = "internal-symbols",
       description = "Prints symbol table",
       subcommands = {HelpCommand.class})
-  public static class InternalSymbols implements Runnable {
+  private static class InternalSymbols implements Runnable {
 
     @ParentCommand Debug parent; // injected by picocli
 
@@ -99,10 +99,7 @@ public class DebugCommand extends PicocliSoarCommand {
     }
 
     private <T extends Symbol> List<String> collectSymbolsOfType(List<Symbol> in, Class<T> klass) {
-      return in.stream()
-          .filter(klass::isInstance)
-          .map(Symbol::toString)
-          .collect(toList());
+      return in.stream().filter(klass::isInstance).map(Symbol::toString).collect(toList());
     }
   }
 
@@ -110,7 +107,7 @@ public class DebugCommand extends PicocliSoarCommand {
       name = "time",
       description = "Executes command and prints time spent",
       subcommands = {HelpCommand.class})
-  public static class Time implements Runnable {
+  private static class Time implements Runnable {
 
     @ParentCommand Debug parent; // injected by picocli
 
@@ -132,26 +129,22 @@ public class DebugCommand extends PicocliSoarCommand {
       // CSoar does things therefore I'm not including it in the output
       // - ALT
 
-      var real_source = new WallclockExecutionTimeSource();
-      var real = DefaultExecutionTimer.newInstance(real_source);
+      var timer = DefaultExecutionTimer.newInstance(new WallclockExecutionTimeSource());
 
-      var combined = String.join(" ", command);
-      //      for (String s : command) {
-      //        combined += s + " ";
-      //      }
-      //      combined = combined.substring(0, combined.length() - 1);
+      var commandString = String.join(" ", command);
 
       // Run the command and record how long it takes to complete
-      real.start();
+      timer.start();
+
       String result;
       try {
-        result = parent.agent.getInterpreter().eval(combined);
+        result = parent.agent.getInterpreter().eval(commandString);
       } catch (SoarException e) {
         parent.agent.getPrinter().startNewLine().print(e.getMessage());
         return;
       }
-      real.pause();
-      double seconds = real.getTotalSeconds();
+      timer.pause();
+      double seconds = timer.getTotalSeconds();
 
       if (result == null) {
         result = "";
