@@ -232,7 +232,7 @@ public class DecideCommand extends PicocliSoarCommand {
 
       default void setValue(final IndifferentSelection context, final String parameterName) {
         try {
-          double newValue = Double.parseDouble(context.param);
+          var newValue = Double.parseDouble(context.param);
 
           if (context.parent.exploration.exploration_valid_parameter_value(
               parameterName, newValue)) {
