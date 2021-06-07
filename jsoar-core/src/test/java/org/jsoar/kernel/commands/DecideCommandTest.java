@@ -47,7 +47,7 @@ public class DecideCommandTest {
     // Then exception occurs
     decideCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[]{"decide", "indifferent-selection", "--first", "--last"});
+        new String[] {"decide", "indifferent-selection", "--first", "--last"});
   }
 
   @Test
@@ -84,7 +84,7 @@ public class DecideCommandTest {
   public void testPrintValueEpsilon() throws SoarException {
     decideCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[]{"decide", "indifferent-selection", "--epsilon"});
+        new String[] {"decide", "indifferent-selection", "--epsilon"});
 
     String printedMessage = outputWriter.toString();
     assertTrue(printedMessage.matches("\\nEpsilon:.*\\n"));
@@ -94,7 +94,7 @@ public class DecideCommandTest {
   public void testSetValueTemperature() throws SoarException {
     decideCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[]{"decide", "indifferent-selection", "--temperature", "0.5"});
+        new String[] {"decide", "indifferent-selection", "--temperature", "0.5"});
 
     Exploration exploration = Adaptables.adapt(agent, Exploration.class);
     assertEquals(0.5, exploration.exploration_get_parameter_value("temperature"), 0);
@@ -107,7 +107,7 @@ public class DecideCommandTest {
   public void testSetValueTemperatureWithIllegalValue() throws SoarException {
     decideCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[]{"decide", "indifferent-selection", "--temperature", "-1.0"});
+        new String[] {"decide", "indifferent-selection", "--temperature", "-1.0"});
 
     Exploration exploration = Adaptables.adapt(agent, Exploration.class);
     assertNotEquals(-1.0, exploration.exploration_get_parameter_value("temperature"), 0);
@@ -120,7 +120,7 @@ public class DecideCommandTest {
   public void testSetValueTemperatureWithNoNumber() throws SoarException {
     decideCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[]{"decide", "indifferent-selection", "--temperature", "INVALID"});
+        new String[] {"decide", "indifferent-selection", "--temperature", "INVALID"});
 
     String printedMessage = outputWriter.toString();
     assertTrue(printedMessage.matches("\\nINVALID is not a valid double: .*"));
@@ -130,7 +130,7 @@ public class DecideCommandTest {
   public void testSetValueEpsilon() throws SoarException {
     decideCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[]{"decide", "indifferent-selection", "--epsilon", "0.5"});
+        new String[] {"decide", "indifferent-selection", "--epsilon", "0.5"});
 
     Exploration exploration = Adaptables.adapt(agent, Exploration.class);
     assertEquals(0.5, exploration.exploration_get_parameter_value("epsilon"), 0);
@@ -143,7 +143,7 @@ public class DecideCommandTest {
   public void testSetValueEpsilonWithIllegalValue() throws SoarException {
     decideCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[]{"decide", "indifferent-selection", "--epsilon", "2.0"});
+        new String[] {"decide", "indifferent-selection", "--epsilon", "2.0"});
 
     Exploration exploration = Adaptables.adapt(agent, Exploration.class);
     assertNotEquals(2.0, exploration.exploration_get_parameter_value("epsilon"), 0);
@@ -156,7 +156,7 @@ public class DecideCommandTest {
   public void testSetValueEpsilonWithNoNumber() throws SoarException {
     decideCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[]{"decide", "indifferent-selection", "--epsilon", "INVALID"});
+        new String[] {"decide", "indifferent-selection", "--epsilon", "INVALID"});
 
     String printedMessage = outputWriter.toString();
     assertTrue(printedMessage.matches("\\nINVALID is not a valid double: .*"));
@@ -165,7 +165,7 @@ public class DecideCommandTest {
   private void setExplorationPolicy(String argument, Policy expectedPolicy) throws SoarException {
     decideCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[]{"decide", "indifferent-selection", argument});
+        new String[] {"decide", "indifferent-selection", argument});
 
     Exploration exploration = Adaptables.adapt(agent, Exploration.class);
     assertEquals(expectedPolicy, exploration.exploration_get_policy());
@@ -182,8 +182,8 @@ public class DecideCommandTest {
   public void testSetValueReductionPolicy() throws SoarException {
     decideCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[]{
-            "decide", "indifferent-selection", "--reduction-policy", "epsilon", "exponential"
+        new String[] {
+          "decide", "indifferent-selection", "--reduction-policy", "epsilon", "exponential"
         });
 
     Exploration exploration = Adaptables.adapt(agent, Exploration.class);
@@ -199,8 +199,8 @@ public class DecideCommandTest {
   public void testSetValueReductionPolicyNonExistingProperty() throws SoarException {
     decideCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[]{
-            "decide", "indifferent-selection", "--reduction-policy", "non-existing", "exponential"
+        new String[] {
+          "decide", "indifferent-selection", "--reduction-policy", "non-existing", "exponential"
         });
 
     String printedMessage = outputWriter.toString();
@@ -211,8 +211,8 @@ public class DecideCommandTest {
   public void testSetValueReductionPolicyInvalidValue() throws SoarException {
     decideCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[]{
-            "decide", "indifferent-selection", "--reduction-policy", "epsilon", "invalid"
+        new String[] {
+          "decide", "indifferent-selection", "--reduction-policy", "epsilon", "invalid"
         });
 
     String printedMessage = outputWriter.toString();
@@ -224,7 +224,7 @@ public class DecideCommandTest {
     // Turn auto update on
     decideCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[]{"decide", "indifferent-selection", "--auto-reduce"});
+        new String[] {"decide", "indifferent-selection", "--auto-reduce"});
 
     String printedMessage = outputWriter.toString();
     assertTrue(printedMessage.matches("\\nAutomatic Policy Parameter Reduction:.*\\n"));
@@ -235,7 +235,7 @@ public class DecideCommandTest {
     // Turn auto update on
     decideCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[]{"decide", "indifferent-selection", "--auto-reduce", "on"});
+        new String[] {"decide", "indifferent-selection", "--auto-reduce", "on"});
 
     Exploration exploration = Adaptables.adapt(agent, Exploration.class);
     assertTrue(exploration.exploration_get_auto_update());
@@ -245,7 +245,7 @@ public class DecideCommandTest {
   public void testSetAutoUpdateOff() throws SoarException {
     decideCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[]{"decide", "indifferent-selection", "--auto-reduce", "off"});
+        new String[] {"decide", "indifferent-selection", "--auto-reduce", "off"});
 
     Exploration exploration = Adaptables.adapt(agent, Exploration.class);
     assertFalse(exploration.exploration_get_auto_update());
@@ -255,7 +255,7 @@ public class DecideCommandTest {
   public void testSetAutoUpdateInvalidValue() throws SoarException {
     decideCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[]{"decide", "indifferent-selection", "--auto-reduce", "invalid"});
+        new String[] {"decide", "indifferent-selection", "--auto-reduce", "invalid"});
 
     assertEquals(
         "\nIllegal argument to decide indifferent-selection --auto-reduce: invalid",
@@ -266,8 +266,8 @@ public class DecideCommandTest {
   public void testSetReductionRate() throws SoarException {
     decideCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[]{
-            "decide", "indifferent-selection", "--reduction-rate", "temperature", "linear", "10.5"
+        new String[] {
+          "decide", "indifferent-selection", "--reduction-rate", "temperature", "linear", "10.5"
         });
 
     Exploration exploration = Adaptables.adapt(agent, Exploration.class);
@@ -278,8 +278,8 @@ public class DecideCommandTest {
   public void testSetReductionRateWithIllegalValue() throws SoarException {
     decideCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[]{
-            "decide", "indifferent-selection", "--reduction-rate", "temperature", "linear", "-1"
+        new String[] {
+          "decide", "indifferent-selection", "--reduction-rate", "temperature", "linear", "-1"
         });
 
     assertEquals(
@@ -290,7 +290,7 @@ public class DecideCommandTest {
   public void testSetReductionRateWithUnknownParameterName() throws SoarException {
     decideCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[]{"decide", "indifferent-selection", "--reduction-rate", "unknown"});
+        new String[] {"decide", "indifferent-selection", "--reduction-rate", "unknown"});
 
     assertEquals("\nUnknown parameter name: unknown", outputWriter.toString());
   }
@@ -299,7 +299,7 @@ public class DecideCommandTest {
   public void testSetReductionRateWithNoReductionPolicySpecified() throws SoarException {
     decideCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[]{"decide", "indifferent-selection", "--reduction-rate", "temperature"});
+        new String[] {"decide", "indifferent-selection", "--reduction-rate", "temperature"});
 
     assertEquals(
         "\nError: exploration parameter reduction policy must be specified",
@@ -310,8 +310,8 @@ public class DecideCommandTest {
   public void testSetReductionRateWithUnknownReductionPolicy() throws SoarException {
     decideCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[]{
-            "decide", "indifferent-selection", "--reduction-rate", "temperature", "unknown"
+        new String[] {
+          "decide", "indifferent-selection", "--reduction-rate", "temperature", "unknown"
         });
 
     assertEquals("\nUnknown reduction policy name: unknown", outputWriter.toString());
@@ -321,8 +321,8 @@ public class DecideCommandTest {
   public void testPrintStats() throws SoarException {
     decideCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[]{
-            "decide", "indifferent-selection", "--reduction-rate", "temperature", "unknown"
+        new String[] {
+          "decide", "indifferent-selection", "--reduction-rate", "temperature", "unknown"
         });
 
     String printedMessage = outputWriter.toString();
@@ -334,7 +334,7 @@ public class DecideCommandTest {
   @Test
   public void testPrintPolicy() throws SoarException {
     decideCommand.execute(
-        DefaultSoarCommandContext.empty(), new String[]{"decide", "indifferent-selection"});
+        DefaultSoarCommandContext.empty(), new String[] {"decide", "indifferent-selection"});
 
     String printedMessage = outputWriter.toString();
     assertNotNull(printedMessage);
@@ -345,7 +345,7 @@ public class DecideCommandTest {
   @Test
   public void testSetSelectOperatorId() throws SoarException {
     decideCommand.execute(
-        DefaultSoarCommandContext.empty(), new String[]{"decide", "select", "TEST"});
+        DefaultSoarCommandContext.empty(), new String[] {"decide", "select", "TEST"});
 
     DecisionManipulation decisionManipulation = Adaptables.adapt(agent, DecisionManipulation.class);
     assertEquals("TEST", decisionManipulation.select_get_operator());
@@ -355,26 +355,24 @@ public class DecideCommandTest {
   public void testPrintSelectOperatorId() throws SoarException {
     // Set select operator ID to known value
     decideCommand.execute(
-        DefaultSoarCommandContext.empty(), new String[]{"decide", "select", "TEST"});
+        DefaultSoarCommandContext.empty(), new String[] {"decide", "select", "TEST"});
 
     // clear buffer
     outputWriter.getBuffer().setLength(0);
 
     // Print select operator
-    decideCommand.execute(
-        DefaultSoarCommandContext.empty(), new String[]{"decide", "select"});
+    decideCommand.execute(DefaultSoarCommandContext.empty(), new String[] {"decide", "select"});
 
     assertEquals("\nTEST", outputWriter.toString());
   }
 
   @Test
-  public void testSetRandomSeed() throws SoarException{
+  public void testSetRandomSeed() throws SoarException {
     decideCommand.execute(
-        DefaultSoarCommandContext.empty(), new String[]{"decide", "set-random-seed"});
+        DefaultSoarCommandContext.empty(), new String[] {"decide", "set-random-seed"});
 
     String printedMessage = outputWriter.toString();
     assertNotNull(printedMessage);
     assertTrue(printedMessage.matches("\\nRandom number generator seed set to .*"));
-
   }
 }
