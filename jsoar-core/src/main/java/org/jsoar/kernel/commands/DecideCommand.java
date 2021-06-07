@@ -741,12 +741,12 @@ public class DecideCommand extends PicocliSoarCommand {
     public void run() {
       // decide select
       if (operatorID == null) {
-        String my_selection = parent.decisionManipulation.select_get_operator();
+        String mySelection = parent.decisionManipulation.select_get_operator();
         parent
             .agent
             .getPrinter()
             .startNewLine()
-            .print(Objects.requireNonNullElse(my_selection, "No operator selected."));
+            .print(Objects.requireNonNullElse(mySelection, "No operator selected."));
       }
       // decide select <identifier>
       else {
