@@ -40,13 +40,10 @@ public class LoadCommandTest {
   public void testRestoreReteNetWhenFileDoesNotExist() throws SoarException {
     loadCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[] {"load", "rete-net", "--load", "/NON-EXISTING"});
+        new String[] {"load", "rete-net", "--load", File.separator + "NON-EXISTING"});
 
     assertEquals(
-        """
-
-            File not found: /NON-EXISTING
-            Error: Load file failed.""",
+        "\nFile not found: " + File.separator + "NON-EXISTING\nError: Load file failed.",
         outputWriter.toString());
   }
 
