@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.nio.file.Paths;
 import org.jsoar.kernel.Agent;
 import org.jsoar.kernel.SoarException;
 import org.jsoar.util.commands.DefaultSoarCommandContext;
@@ -40,7 +41,7 @@ public class LoadCommandTest {
   public void testRestoreReteNetWhenFileDoesNotExist() throws SoarException {
     loadCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[] {"load", "rete-net", "--load", File.separator + "NON-EXISTING"});
+        new String[] {"load", "rete-net", "--load", File.separator + Paths.get("NON-EXISTING")});
 
     assertEquals(
         "\nFile not found: " + File.separator + "NON-EXISTING\nError: Load file failed.",
