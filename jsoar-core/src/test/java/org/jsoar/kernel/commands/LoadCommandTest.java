@@ -43,11 +43,10 @@ public class LoadCommandTest {
     Path nonExistingFile = Paths.get("NON-EXISTING");
     loadCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[]{"load", "rete-net", "--load", nonExistingFile.toAbsolutePath().toString()});
+        new String[] {"load", "rete-net", "--load", nonExistingFile.toAbsolutePath().toString()});
 
     assertEquals(
-        "\nFile not found: " + nonExistingFile.toAbsolutePath().toString()
-            + "\nError: Load file failed.",
+        "\nFile not found: " + nonExistingFile.toAbsolutePath() + "\nError: Load file failed.",
         outputWriter.toString());
   }
 
@@ -56,7 +55,7 @@ public class LoadCommandTest {
     File file = File.createTempFile("invalid", null);
     loadCommand.execute(
         DefaultSoarCommandContext.empty(),
-        new String[]{"load", "rete-net", "--load", file.getAbsolutePath()});
+        new String[] {"load", "rete-net", "--load", file.getAbsolutePath()});
 
     assertEquals(
         """
