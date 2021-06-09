@@ -53,9 +53,10 @@ public class HandlerCommand extends PicocliSoarCommand {
         rhsFunctionManager.disableHandler(functionToDisable);
         return "RHS function disabled: " + functionToDisable;
       } else {
-        String handlerNames = rhsFunctionManager.getDisabledHandlers().stream()
-            .map(RhsFunctionHandler::getName).collect(
-                Collectors.joining("\n"));
+        String handlerNames =
+            rhsFunctionManager.getDisabledHandlers().stream()
+                .map(RhsFunctionHandler::getName)
+                .collect(Collectors.joining("\n"));
         return "===== Disabled RHS Functions =====\n" + handlerNames + "\n";
       }
     }

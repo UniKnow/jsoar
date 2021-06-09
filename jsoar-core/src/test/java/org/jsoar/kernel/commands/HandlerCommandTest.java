@@ -74,7 +74,7 @@ public class HandlerCommandTest {
 
     // Test enabled.
     handlerCommand.execute(
-        DefaultSoarCommandContext.empty(), new String[]{"handler", "--enable", "log"});
+        DefaultSoarCommandContext.empty(), new String[] {"handler", "--enable", "log"});
     agent
         .getProductions()
         .loadProduction("test (state <s> ^superstate nil) --> (log info |Simple test|)");
@@ -84,7 +84,7 @@ public class HandlerCommandTest {
 
     // Test disabled.
     handlerCommand.execute(
-        DefaultSoarCommandContext.empty(), new String[]{"handler", "--disable", "log"});
+        DefaultSoarCommandContext.empty(), new String[] {"handler", "--disable", "log"});
     agent
         .getProductions()
         .loadProduction("test2 (state <s> ^superstate nil) --> (log info |Simple test|)");
@@ -94,7 +94,7 @@ public class HandlerCommandTest {
 
     // Test enabled.
     handlerCommand.execute(
-        DefaultSoarCommandContext.empty(), new String[]{"handler", "--enable", "log"});
+        DefaultSoarCommandContext.empty(), new String[] {"handler", "--enable", "log"});
     agent
         .getProductions()
         .loadProduction("test3 (state <s> ^superstate nil) --> (log info |Simple test|)");
@@ -109,18 +109,18 @@ public class HandlerCommandTest {
     String result;
 
     handlerCommand.execute(
-        DefaultSoarCommandContext.empty(), new String[]{"handler", "--enable", "log"});
-    result = handlerCommand.execute(DefaultSoarCommandContext.empty(), new String[]{"handler"});
+        DefaultSoarCommandContext.empty(), new String[] {"handler", "--enable", "log"});
+    result = handlerCommand.execute(DefaultSoarCommandContext.empty(), new String[] {"handler"});
     assertFalse(regex.matcher(result).find());
 
     handlerCommand.execute(
-        DefaultSoarCommandContext.empty(), new String[]{"handler", "--disable", "log"});
-    result = handlerCommand.execute(DefaultSoarCommandContext.empty(), new String[]{"handler"});
+        DefaultSoarCommandContext.empty(), new String[] {"handler", "--disable", "log"});
+    result = handlerCommand.execute(DefaultSoarCommandContext.empty(), new String[] {"handler"});
     assertTrue(regex.matcher(result).find());
 
     handlerCommand.execute(
-        DefaultSoarCommandContext.empty(), new String[]{"handler", "--enable", "log"});
-    result = handlerCommand.execute(DefaultSoarCommandContext.empty(), new String[]{"handler"});
+        DefaultSoarCommandContext.empty(), new String[] {"handler", "--enable", "log"});
+    result = handlerCommand.execute(DefaultSoarCommandContext.empty(), new String[] {"handler"});
     assertFalse(regex.matcher(result).find());
   }
 
@@ -134,15 +134,17 @@ public class HandlerCommandTest {
     rhsFunctionManager.disableHandler("OTHER-RHS-FUNCTION");
 
     // When printing disabled rhs function handlers
-    String result = handlerCommand.execute(
-        DefaultSoarCommandContext.empty(), new String[]{"handler"});
+    String result =
+        handlerCommand.execute(DefaultSoarCommandContext.empty(), new String[] {"handler"});
 
     // Then result contains disabled RHS functions
-    assertEquals("""
+    assertEquals(
+        """
         ===== Disabled RHS Functions =====
         OTHER-RHS-FUNCTION
         RHS-FUNCTION
-        """, result);
+        """,
+        result);
   }
 
   private void registerRhsHandler(final String name) {
