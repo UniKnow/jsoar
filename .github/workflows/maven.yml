@@ -40,7 +40,8 @@ jobs:
       - name: Publish Unit Test Results
         # Version 1.17
         #uses: EnricoMi/publish-unit-test-result-action@2c1638db7746f235576536a706b83d2eece7f413
-        uses: scacap/action-surefire-report@v1.0.5
+        #uses: scacap/action-surefire-report@v1.0.5
+        uses: mikepenz/action-junit-report@v2
         if: failure()
 #        with:
 #          files: target/surefire-reports/**/*.xml
