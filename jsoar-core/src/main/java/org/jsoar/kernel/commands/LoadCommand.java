@@ -115,17 +115,17 @@ public class LoadCommand extends PicocliSoarCommand {
         if (topLevel) {
           // Construct an array containing each word in the current
           // command and assign it to "lastTopLevelCommand"
-          String[] lastCommand = new String[fileNames.length + 2];
+          var lastCommand = new String[fileNames.length + 2];
           lastCommand[0] = "load";
           lastCommand[1] = "file";
-          for (int i = 0; i < fileNames.length; i++) {
+          for (var i = 0; i < fileNames.length; i++) {
             lastCommand[i + 2] = fileNames[i];
           }
           parent.sourceCommand.lastTopLevelCommand = Arrays.copyOf(lastCommand, lastCommand.length);
         }
 
         // Generate a message depending on the files loaded/excised and the user-provided options
-        final StringBuilder result = new StringBuilder();
+        final var result = new StringBuilder();
         if (topLevel) {
           if (loadSummary) {
             for (FileInfo file : parent.sourceCommand.topLevelState.files) {
@@ -206,38 +206,22 @@ public class LoadCommand extends PicocliSoarCommand {
 
     @Override
     public void run() {
-      InputStream is = null;
 
-      try {
-        is = uncompressIfNeeded(fileName, findFile(fileName));
+      try(InputStream is = uncompressIfNeeded(fileName, findFile(fileName))) {
         ReteSerializer.replaceRete(parent.agent, is);
       } catch (IOException e) {
         parent.agent.getPrinter().startNewLine().print("Error: Load file failed.");
-        return;
       } catch (SoarException e) {
         parent.agent.getPrinter().startNewLine().print("Error: " + e.getMessage());
-        return;
-      } finally {
-        if (is != null) {
-          try {
-            is.close();
-          } catch (IOException e) {
-            parent
-                .agent
-                .getPrinter()
-                .startNewLine()
-                .print("Error: IO error while closing the input source.");
-          }
-        }
       }
 
       parent.agent.getPrinter().startNewLine().print("Rete loaded into agent");
     }
 
     /** Construct an InputStream from a file or URL. */
-    private InputStream findFile(String fileString) throws SoarException, IOException {
-      final URL url = FileTools.asUrl(fileString);
-      File file = new File(fileString);
+    private InputStream findFile(String fileString) throws IOException {
+      final var url = FileTools.asUrl(fileString);
+      var file = new File(fileString);
       if (url != null) {
         return url.openStream();
       } else if (file.isAbsolute()) {
@@ -246,7 +230,7 @@ public class LoadCommand extends PicocliSoarCommand {
         }
         return new FileInputStream(file);
       } else if (parent.sourceCommand.getWorkingDirectoryRaw().url != null) {
-        final URL childUrl =
+        final var childUrl =
             parent.sourceCommand.joinUrl(
                 parent.sourceCommand.getWorkingDirectoryRaw().url, fileString);
         return childUrl.openStream();
