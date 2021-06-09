@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.zip.GZIPInputStream;
 import org.jsoar.kernel.Agent;
@@ -207,15 +206,14 @@ public class LoadCommand extends PicocliSoarCommand {
     @Override
     public void run() {
 
-      try(InputStream is = uncompressIfNeeded(fileName, findFile(fileName))) {
+      try (InputStream is = uncompressIfNeeded(fileName, findFile(fileName))) {
         ReteSerializer.replaceRete(parent.agent, is);
+        parent.agent.getPrinter().startNewLine().print("Rete loaded into agent");
       } catch (IOException e) {
         parent.agent.getPrinter().startNewLine().print("Error: Load file failed.");
       } catch (SoarException e) {
         parent.agent.getPrinter().startNewLine().print("Error: " + e.getMessage());
       }
-
-      parent.agent.getPrinter().startNewLine().print("Rete loaded into agent");
     }
 
     /** Construct an InputStream from a file or URL. */
