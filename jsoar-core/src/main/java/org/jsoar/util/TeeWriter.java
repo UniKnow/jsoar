@@ -37,9 +37,7 @@ public class TeeWriter extends Writer {
     this.writers.remove(writer);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void close() throws IOException {
     for (Writer w : writers) {
@@ -47,9 +45,7 @@ public class TeeWriter extends Writer {
     }
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void flush() throws IOException {
     for (Writer w : writers) {
@@ -57,9 +53,7 @@ public class TeeWriter extends Writer {
     }
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void write(char[] cbuf, int off, int len) throws IOException {
     for (Writer w : writers) {
