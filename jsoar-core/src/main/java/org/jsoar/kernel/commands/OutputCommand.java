@@ -4,6 +4,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.Deque;
 import java.util.LinkedList;
 import org.jsoar.kernel.Agent;
 import org.jsoar.kernel.SoarException;
@@ -43,9 +44,10 @@ public final class OutputCommand extends PicocliSoarCommand {
 
     private final Agent agent;
     private final Print printCommand;
-    private final LinkedList<Writer> writerStack;
 
-    public Output(Agent agent, Print printCommand, LinkedList<Writer> writerStack) {
+    private final Deque<Writer> writerStack;
+
+    public Output(Agent agent, Print printCommand, Deque<Writer> writerStack) {
       this.agent = agent;
       this.printCommand = printCommand;
       this.writerStack = writerStack;
@@ -92,6 +94,15 @@ public final class OutputCommand extends PicocliSoarCommand {
         } else {
           parent.writerStack.pop();
           parent.agent.getPrinter().popWriter();
+          // TODO: Properly close writers ?
+          //          try {
+          //            writer.flush();
+          //            writer.close();
+          //          } catch(IOException error) {
+          //            // Print message
+          //          }
+          // TODO: Message seems wrong as there can still be writers to log (when specifying
+          // multiple writers)
           parent.agent.getPrinter().startNewLine().print("Log file closed.");
         }
       } else if (fileName != null) {
@@ -158,18 +169,18 @@ public final class OutputCommand extends PicocliSoarCommand {
     @Spec CommandSpec spec; // injected by picocli
 
     @Parameters(index = "0", arity = "0..1", description = "New print depth")
-    Integer printDepth;
+    Integer depth;
 
     @Override
     public void run() {
-      if (printDepth == null) {
+      if (depth == null) {
         parent
             .agent
             .getPrinter()
             .startNewLine()
             .print("print-depth is " + parent.printCommand.getDefaultDepth());
       } else {
-        int depth = printDepth;
+        int depth = this.depth;
         try {
           parent.printCommand.setDefaultDepth(depth);
         } catch (SoarException e) {
