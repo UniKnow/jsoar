@@ -31,6 +31,7 @@ public class OutputCommandTest {
 
     when(printer.asPrintWriter()).thenReturn(mock(PrintWriter.class));
     when(printer.startNewLine()).thenReturn(printer);
+    when(printer.print(any(String.class))).thenReturn(printer);
 
     outputCommand = new OutputCommand(agent, new Print(agent));
   }
@@ -63,15 +64,48 @@ public class OutputCommandTest {
   }
 
   @Test
-  public void testSetLogToStdout() throws SoarException {
+  public void testSetLogToStdOut() throws SoarException {
+    setLogTo("stdout", "Now writing to System.out");
+  }
+
+  @Test
+  public void testSetLogToStdErr() throws SoarException {
+    setLogTo("stderr", "Now writing to System.err");
+  }
+
+  @Test
+  public void testSetLogToLogFile() throws SoarException {
+    setLogTo("log.file", "Log file log.file open.");
+  }
+
+  @Test
+  public void testPrintStateLog() throws SoarException {
     // Given a log without any writers
-    // When adding writer to stdout
+    // When printing state log
+    outputCommand.execute(DefaultSoarCommandContext.empty(), new String[] {"output", "log"});
+
+    // Then log is off
+    verify(printer, times(1)).print("log is off");
+
+    // When adding writer
     outputCommand.execute(
         DefaultSoarCommandContext.empty(), new String[] {"output", "log", "stdout"});
+    // And printing state log
+    outputCommand.execute(DefaultSoarCommandContext.empty(), new String[] {"output", "log"});
+
+    // Then log is on
+    verify(printer, times(1)).print("log is on");
+  }
+
+  private void setLogTo(final String destination, final String message) throws SoarException {
+    // Given a log without any writers
+    // When adding writer
+    outputCommand.execute(
+        DefaultSoarCommandContext.empty(), new String[] {"output", "log", destination});
 
     // Then new writer is pushed to printer agent
     verify(printer, times(1)).pushWriter(any(TeeWriter.class));
     // And message is printed that writing to stdout
-    verify(printer, times(1)).print("Now writing to System.out");
+    verify(printer, times(1)).print(message);
   }
 }

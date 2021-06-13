@@ -6,6 +6,9 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.jsoar.kernel.Agent;
 import org.jsoar.kernel.SoarException;
 import org.jsoar.kernel.commands.PrintCommand.Print;
@@ -61,10 +64,10 @@ public final class OutputCommand extends PicocliSoarCommand {
           .startNewLine()
           .print(
               """
-              =======================================================
-              -                    Output Status                    -
-              =======================================================
-              """);
+                  =======================================================
+                  -                    Output Status                    -
+                  =======================================================
+                  """);
     }
   }
 
@@ -73,6 +76,13 @@ public final class OutputCommand extends PicocliSoarCommand {
       description = "Changes output log settings",
       subcommands = {HelpCommand.class})
   public static class Log implements Runnable {
+
+    /*
+     * Contains list of actions that can be performed by this command
+     */
+    private static final List<Action<Log>> ACTIONS =
+        Stream.of(new CloseLog(), new SetDestinationLog(), new PrintStateLog())
+            .collect(Collectors.toList());
 
     @ParentCommand Output parent; // injected by picocli
 
@@ -83,77 +93,121 @@ public final class OutputCommand extends PicocliSoarCommand {
         description = "Closes the log file")
     boolean close;
 
-    @Parameters(index = "0", arity = "0..1", description = "File name")
-    String fileName;
+    @Parameters(index = "0", arity = "0..1", description = "Destination log")
+    String destination;
 
     @Override
     public void run() {
-      if (close) {
-        if (parent.writerStack.isEmpty()) {
-          parent.agent.getPrinter().startNewLine().print("Log is not open.");
-        } else {
-          parent.writerStack.pop();
-          parent.agent.getPrinter().popWriter();
-          // TODO: Properly close writers ?
-          //          try {
-          //            writer.flush();
-          //            writer.close();
-          //          } catch(IOException error) {
-          //            // Print message
-          //          }
-          // TODO: Message seems wrong as there can still be writers to log (when specifying
-          // multiple writers)
-          parent.agent.getPrinter().startNewLine().print("Log file closed.");
+      for (Action<Log> action : ACTIONS) {
+        if (action.execute(this)) {
+          return;
         }
-      } else if (fileName != null) {
-        if (fileName.equals("stdout")) {
-          Writer w = new OutputStreamWriter(System.out);
-          parent.writerStack.push(null);
-          parent
-              .agent
-              .getPrinter()
-              .pushWriter(new TeeWriter(parent.agent.getPrinter().getWriter(), w));
-          parent.agent.getPrinter().startNewLine().print("Now writing to System.out");
-        } else if (fileName.equals("stderr")) {
-          Writer w = new OutputStreamWriter(System.err);
-          parent.writerStack.push(null);
-          parent
-              .agent
-              .getPrinter()
-              .pushWriter(new TeeWriter(parent.agent.getPrinter().getWriter(), w));
-          parent.agent.getPrinter().startNewLine().print("Now writing to System.err");
-        } else {
-          try {
-            Writer w = new FileWriter(fileName);
-            parent.writerStack.push(w);
-            parent
-                .agent
-                .getPrinter()
-                .pushWriter(new TeeWriter(parent.agent.getPrinter().getWriter(), w));
-            // adding a newline at the end because we don't want the next line (which could be a
-            // command output) to start on the same line.
-            // normally we would leave this up to the debugger or other display mechanism to figure
-            // out, but in this case it's going straight to a file.
-            parent
-                .agent
-                .getPrinter()
-                .startNewLine()
-                .print("Log file " + fileName + " open.")
-                .startNewLine();
-          } catch (IOException e) {
-            parent
-                .agent
-                .getPrinter()
-                .startNewLine()
-                .print("Failed to open file '" + fileName + "': " + e.getMessage());
-          }
-        }
-      } else {
-        parent
+      }
+    }
+
+    private static class PrintStateLog implements Action<Log> {
+
+      @Override
+      public boolean execute(Log context) {
+        context
+            .parent
             .agent
             .getPrinter()
             .startNewLine()
-            .print("log is " + (!parent.writerStack.isEmpty() ? "on" : "off"));
+            .print("log is " + (context.parent.writerStack.isEmpty() ? "off" : "on"));
+
+        return true;
+      }
+    }
+
+    private static class SetDestinationLog implements Action<Log> {
+
+      @Override
+      public boolean execute(Log context) {
+
+        var handled = false;
+
+        if (context.destination != null) {
+          String destination = context.destination;
+          Writer w;
+
+          switch (destination) {
+            case "stdout":
+              w = new OutputStreamWriter(System.out);
+              context.parent.writerStack.push(null);
+              context
+                  .parent
+                  .agent
+                  .getPrinter()
+                  .pushWriter(new TeeWriter(context.parent.agent.getPrinter().getWriter(), w));
+              context.parent.agent.getPrinter().startNewLine().print("Now writing to System.out");
+              break;
+            case "stderr":
+              w = new OutputStreamWriter(System.err);
+              context.parent.writerStack.push(null);
+              context
+                  .parent
+                  .agent
+                  .getPrinter()
+                  .pushWriter(new TeeWriter(context.parent.agent.getPrinter().getWriter(), w));
+              context.parent.agent.getPrinter().startNewLine().print("Now writing to System.err");
+              break;
+            default:
+              try {
+                w = new FileWriter(context.destination);
+                context.parent.writerStack.push(w);
+                context
+                    .parent
+                    .agent
+                    .getPrinter()
+                    .pushWriter(new TeeWriter(context.parent.agent.getPrinter().getWriter(), w));
+
+                // adding a newline at the end because we don't want the next line (which could be a
+                // command output) to start on the same line.
+                // normally we would leave this up to the debugger or other display mechanism to
+                // figure
+                // out, but in this case it's going straight to a file.
+                context
+                    .parent
+                    .agent
+                    .getPrinter()
+                    .startNewLine()
+                    .print("Log file " + context.destination + " open.")
+                    .startNewLine();
+              } catch (IOException e) {
+                context
+                    .parent
+                    .agent
+                    .getPrinter()
+                    .startNewLine()
+                    .print("Failed to open file '" + context.destination + "': " + e.getMessage());
+              }
+          }
+          handled = true;
+        }
+
+        return handled;
+      }
+    }
+
+    private static class CloseLog implements Action<Log> {
+
+      @Override
+      public boolean execute(Log context) {
+        var handled = false;
+
+        if (context.close) {
+          if (context.parent.writerStack.isEmpty()) {
+            context.parent.agent.getPrinter().startNewLine().print("Log is not open.");
+          } else {
+            context.parent.writerStack.pop();
+            context.parent.agent.getPrinter().popWriter();
+            context.parent.agent.getPrinter().startNewLine().print("Log file closed.");
+          }
+          handled = true;
+        }
+
+        return handled;
       }
     }
   }
