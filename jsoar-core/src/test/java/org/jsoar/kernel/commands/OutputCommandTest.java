@@ -1,5 +1,6 @@
 package org.jsoar.kernel.commands;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -20,7 +21,8 @@ public class OutputCommandTest {
 
   private Agent agent;
   private Printer printer;
-  OutputCommand outputCommand;
+  private OutputCommand outputCommand;
+  private Print print;
 
   @Before
   public void setUp() throws Exception {
@@ -33,7 +35,8 @@ public class OutputCommandTest {
     when(printer.startNewLine()).thenReturn(printer);
     when(printer.print(any(String.class))).thenReturn(printer);
 
-    outputCommand = new OutputCommand(agent, new Print(agent));
+    print = new Print(agent);
+    outputCommand = new OutputCommand(agent, print);
   }
 
   @Test
@@ -76,6 +79,38 @@ public class OutputCommandTest {
   @Test
   public void testSetLogToLogFile() throws SoarException {
     setLogTo("log.file", "Log file log.file open.");
+  }
+
+  @Test
+  public void testPrintDepth() throws SoarException {
+    // Given default depth is 4
+    outputCommand.execute(
+        DefaultSoarCommandContext.empty(), new String[] {"output", "print-depth", "4"});
+
+    // When printing depth
+    outputCommand.execute(
+        DefaultSoarCommandContext.empty(), new String[] {"output", "print-depth"});
+
+    // Then message showing depth is printed
+    verify(printer, times(1)).print("print-depth is 4");
+  }
+
+  @Test
+  public void testSetPrintDepth() throws SoarException {
+    // When setting print depth
+    outputCommand.execute(
+        DefaultSoarCommandContext.empty(), new String[] {"output", "print-depth", "2"});
+
+    // Then message that print depth has been set is printed
+    verify(printer, times(1)).print("print-depth is now 2");
+    // And default depth of print is set to 2
+    assertEquals(2, print.getDefaultDepth());
+  }
+
+  @Test(expected = SoarException.class)
+  public void testSetPrintDepthThrowsExceptionWhenInvalidValue() throws SoarException {
+    outputCommand.execute(
+        DefaultSoarCommandContext.empty(), new String[] {"output", "print-depth", "-1"});
   }
 
   @Test

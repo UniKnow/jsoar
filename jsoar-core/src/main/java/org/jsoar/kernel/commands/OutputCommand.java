@@ -225,22 +225,60 @@ public final class OutputCommand extends PicocliSoarCommand {
     @Parameters(index = "0", arity = "0..1", description = "New print depth")
     Integer depth;
 
+    /*
+     * Contains list of actions that can be performed by this command
+     */
+    private static final List<Action<PrintDepth>> ACTIONS =
+        Stream.of(new Print(), new Set()).collect(Collectors.toList());
+
     @Override
     public void run() {
-      if (depth == null) {
-        parent
-            .agent
-            .getPrinter()
-            .startNewLine()
-            .print("print-depth is " + parent.printCommand.getDefaultDepth());
-      } else {
-        int depth = this.depth;
-        try {
-          parent.printCommand.setDefaultDepth(depth);
-        } catch (SoarException e) {
-          throw new ParameterException(spec.commandLine(), e.getMessage(), e);
+      for (Action<PrintDepth> action : ACTIONS) {
+        if (action.execute(this)) {
+          return;
         }
-        parent.agent.getPrinter().startNewLine().print("print-depth is now " + depth);
+      }
+    }
+
+    private static class Print implements Action<PrintDepth> {
+
+      @Override
+      public boolean execute(PrintDepth context) {
+        var handled = false;
+
+        if (context.depth == null) {
+          context
+              .parent
+              .agent
+              .getPrinter()
+              .startNewLine()
+              .print("print-depth is " + context.parent.printCommand.getDefaultDepth());
+
+          handled = true;
+        }
+        return handled;
+      }
+    }
+
+    private static class Set implements Action<PrintDepth> {
+
+      @Override
+      public boolean execute(PrintDepth context) {
+        var handled = false;
+
+        if (context.depth != null) {
+          int depth = context.depth;
+          try {
+            context.parent.printCommand.setDefaultDepth(depth);
+          } catch (SoarException e) {
+            throw new ParameterException(context.spec.commandLine(), e.getMessage(), e);
+          }
+          context.parent.agent.getPrinter().startNewLine().print("print-depth is now " + depth);
+
+          handled = true;
+        }
+
+        return handled;
       }
     }
   }
