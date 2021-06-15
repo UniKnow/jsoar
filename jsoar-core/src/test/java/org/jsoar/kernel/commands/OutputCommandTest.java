@@ -46,7 +46,7 @@ public class OutputCommandTest {
     // Given a log without any writers
     // When closing log
     outputCommand.execute(
-        DefaultSoarCommandContext.empty(), new String[]{"output", "log", "--close"});
+        DefaultSoarCommandContext.empty(), new String[] {"output", "log", "--close"});
 
     // Then 'log is not open' message is printed
     verify(printer, times(1)).print("Log is not open.");
@@ -56,11 +56,11 @@ public class OutputCommandTest {
   public void testCloseLog() throws SoarException {
     // Given a log with writers
     outputCommand.execute(
-        DefaultSoarCommandContext.empty(), new String[]{"output", "log", "stdout"});
+        DefaultSoarCommandContext.empty(), new String[] {"output", "log", "stdout"});
 
     // When closing log
     outputCommand.execute(
-        DefaultSoarCommandContext.empty(), new String[]{"output", "log", "--close"});
+        DefaultSoarCommandContext.empty(), new String[] {"output", "log", "--close"});
 
     // Then writer is removed from printer agent
     verify(printer, times(1)).popWriter();
@@ -87,11 +87,11 @@ public class OutputCommandTest {
   public void testPrintDepth() throws SoarException {
     // Given default depth is 4
     outputCommand.execute(
-        DefaultSoarCommandContext.empty(), new String[]{"output", "print-depth", "4"});
+        DefaultSoarCommandContext.empty(), new String[] {"output", "print-depth", "4"});
 
     // When printing depth
     outputCommand.execute(
-        DefaultSoarCommandContext.empty(), new String[]{"output", "print-depth"});
+        DefaultSoarCommandContext.empty(), new String[] {"output", "print-depth"});
 
     // Then message showing depth is printed
     verify(printer, times(1)).print("print-depth is 4");
@@ -101,7 +101,7 @@ public class OutputCommandTest {
   public void testSetPrintDepth() throws SoarException {
     // When setting print depth
     outputCommand.execute(
-        DefaultSoarCommandContext.empty(), new String[]{"output", "print-depth", "2"});
+        DefaultSoarCommandContext.empty(), new String[] {"output", "print-depth", "2"});
 
     // Then message that print depth has been set is printed
     verify(printer, times(1)).print("print-depth is now 2");
@@ -112,23 +112,23 @@ public class OutputCommandTest {
   @Test(expected = SoarException.class)
   public void testSetPrintDepthThrowsExceptionWhenInvalidValue() throws SoarException {
     outputCommand.execute(
-        DefaultSoarCommandContext.empty(), new String[]{"output", "print-depth", "-1"});
+        DefaultSoarCommandContext.empty(), new String[] {"output", "print-depth", "-1"});
   }
 
   @Test
   public void testPrintStateLog() throws SoarException {
     // Given a log without any writers
     // When printing state log
-    outputCommand.execute(DefaultSoarCommandContext.empty(), new String[]{"output", "log"});
+    outputCommand.execute(DefaultSoarCommandContext.empty(), new String[] {"output", "log"});
 
     // Then log is off
     verify(printer, times(1)).print("log is off");
 
     // When adding writer
     outputCommand.execute(
-        DefaultSoarCommandContext.empty(), new String[]{"output", "log", "stdout"});
+        DefaultSoarCommandContext.empty(), new String[] {"output", "log", "stdout"});
     // And printing state log
-    outputCommand.execute(DefaultSoarCommandContext.empty(), new String[]{"output", "log"});
+    outputCommand.execute(DefaultSoarCommandContext.empty(), new String[] {"output", "log"});
 
     // Then log is on
     verify(printer, times(1)).print("log is on");
@@ -136,8 +136,8 @@ public class OutputCommandTest {
 
   @Test
   public void testEnableWarnings() throws SoarException {
-    outputCommand
-        .execute(DefaultSoarCommandContext.empty(), new String[]{"output", "warnings", "--enable"});
+    outputCommand.execute(
+        DefaultSoarCommandContext.empty(), new String[] {"output", "warnings", "--enable"});
 
     verify(printer, times(1)).setPrintWarnings(true);
     verify(printer, times(1)).print("warnings is now on");
@@ -145,8 +145,8 @@ public class OutputCommandTest {
 
   @Test
   public void testDisableWarnings() throws SoarException {
-    outputCommand.execute(DefaultSoarCommandContext.empty(),
-        new String[]{"output", "warnings", "--disable"});
+    outputCommand.execute(
+        DefaultSoarCommandContext.empty(), new String[] {"output", "warnings", "--disable"});
 
     verify(printer, times(1)).setPrintWarnings(false);
     verify(printer, times(1)).print("warnings is now off");
@@ -157,23 +157,23 @@ public class OutputCommandTest {
     ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
 
     // Given toggle warning is turned off
-    outputCommand.execute(DefaultSoarCommandContext.empty(),
-        new String[]{"output", "warnings", "--disable"});
+    outputCommand.execute(
+        DefaultSoarCommandContext.empty(), new String[] {"output", "warnings", "--disable"});
 
     // When printing warning toggle
-    outputCommand.execute(DefaultSoarCommandContext.empty(), new String[]{"output", "warnings"});
+    outputCommand.execute(DefaultSoarCommandContext.empty(), new String[] {"output", "warnings"});
 
     // Then current state of warning toggle is printed
     verify(printer, times(2)).print(argumentCaptor.capture());
-    assertEquals(Arrays.asList("warnings is now off", "warnings is off"),
-        argumentCaptor.getAllValues());
+    assertEquals(
+        Arrays.asList("warnings is now off", "warnings is off"), argumentCaptor.getAllValues());
   }
 
   private void setLogTo(final String destination, final String message) throws SoarException {
     // Given a log without any writers
     // When adding writer
     outputCommand.execute(
-        DefaultSoarCommandContext.empty(), new String[]{"output", "log", destination});
+        DefaultSoarCommandContext.empty(), new String[] {"output", "log", destination});
 
     // Then new writer is pushed to printer agent
     verify(printer, times(1)).pushWriter(any(TeeWriter.class));
