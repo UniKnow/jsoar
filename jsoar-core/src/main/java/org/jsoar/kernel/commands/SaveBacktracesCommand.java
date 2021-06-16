@@ -35,7 +35,7 @@ public class SaveBacktracesCommand extends PicocliSoarCommand {
         arity = "0..1",
         converter = ToggleConverter.class,
         description = "Enables/disables backtrace saving")
-    Toggle explain;
+    private Toggle explain;
 
     @Override
     public void run() {

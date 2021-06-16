@@ -219,12 +219,14 @@ public final class OutputCommand extends PicocliSoarCommand {
       subcommands = {HelpCommand.class})
   public static class PrintDepth implements Runnable {
 
-    @ParentCommand Output parent; // injected by picocli
+    @ParentCommand
+    private Output parent; // injected by picocli
 
-    @Spec CommandSpec spec; // injected by picocli
+    @Spec
+    private CommandSpec spec; // injected by picocli
 
     @Parameters(index = "0", arity = "0..1", description = "New print depth")
-    Integer depth;
+    private Integer depth;
 
     /*
      * Contains list of actions that can be performed by this command
@@ -290,13 +292,14 @@ public final class OutputCommand extends PicocliSoarCommand {
       subcommands = {HelpCommand.class})
   public static class Warnings implements Runnable {
 
-    @ParentCommand Output parent; // injected by picocli
+    @ParentCommand
+    private Output parent; // injected by picocli
 
     @Parameters(
         arity = "0..1",
         converter = ToggleConverter.class,
         description = "toggle output warnings")
-    Toggle printWarnings;
+    private Toggle printWarnings;
 
     @Override
     public void run() {

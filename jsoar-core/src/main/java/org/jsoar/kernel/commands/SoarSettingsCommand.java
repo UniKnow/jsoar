@@ -188,7 +188,7 @@ public class SoarSettingsCommand extends PicocliSoarCommand {
         arity = "0..1",
         converter = ToggleConverter.class,
         description = "Enables/disables timers")
-    Toggle timers;
+    private Toggle timers;
 
     @Override
     public void run() {
