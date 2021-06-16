@@ -5,10 +5,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jsoar.kernel.Agent;
 import org.jsoar.kernel.SoarProperties;
+import org.jsoar.kernel.commands.ToggleConverter.Toggle;
 import org.jsoar.util.commands.PicocliSoarCommand;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.HelpCommand;
-import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
 /**
  * This is the implementation of the "chunk" command.
@@ -31,8 +32,7 @@ public class ChunkCommand extends PicocliSoarCommand {
      * Contains list of actions that can be performed by this command
      */
     private static final List<Action<Chunk>> ACTIONS =
-        Stream.of(new EnableLearning(), new DisableLearning(), new PrintValueLearning())
-            .collect(Collectors.toList());
+        Stream.of(new SetLearning(), new PrintLearning()).collect(Collectors.toList());
 
     private final Agent agent;
 
@@ -40,36 +40,33 @@ public class ChunkCommand extends PicocliSoarCommand {
       this.agent = agent;
     }
 
-    @Option(
-        names = {"on", "-e", "--on", "--enable"},
-        defaultValue = "false",
-        description = "Enables chunking")
-    private boolean enable;
-
-    @Option(
-        names = {"off", "-d", "--off", "--disable"},
-        defaultValue = "false",
-        description = "Disables chunking")
-    private boolean disable;
+    @Parameters(
+        arity = "0..1",
+        converter = ToggleConverter.class,
+        description = "Enables/disables learning")
+    private Toggle learning;
 
     @Override
     public void run() {
       // Traverse list of actions until successfully handled
       for (Action<Chunk> action : ACTIONS) {
         if (action.execute(this)) {
-          break;
+          return;
         }
       }
     }
 
-    private static class EnableLearning implements Action<Chunk> {
+    private static class SetLearning implements Action<Chunk> {
 
       @Override
       public boolean execute(Chunk context) {
         var handled = false;
 
-        if (context.enable) {
-          context.agent.getProperties().set(SoarProperties.LEARNING_ON, true);
+        if (context.learning != null) {
+          context
+              .agent
+              .getProperties()
+              .set(SoarProperties.LEARNING_ON, context.learning.asBoolean());
           handled = true;
         }
 
@@ -77,37 +74,26 @@ public class ChunkCommand extends PicocliSoarCommand {
       }
     }
 
-    private static class DisableLearning implements Action<Chunk> {
+    private static class PrintLearning implements Action<Chunk> {
 
       @Override
       public boolean execute(Chunk context) {
         var handled = false;
 
-        if (context.disable) {
-          context.agent.getProperties().set(SoarProperties.LEARNING_ON, false);
+        if (context.learning == null) {
+          context
+              .agent
+              .getPrinter()
+              .startNewLine()
+              .print(
+                  "The current chunk setting is: "
+                      + (Boolean.TRUE.equals(
+                              context.agent.getProperties().get(SoarProperties.LEARNING_ON))
+                          ? "enabled"
+                          : "disabled"));
           handled = true;
         }
-
         return handled;
-      }
-    }
-
-    private static class PrintValueLearning implements Action<Chunk> {
-
-      @Override
-      public boolean execute(Chunk context) {
-        context
-            .agent
-            .getPrinter()
-            .startNewLine()
-            .print(
-                "The current chunk setting is: "
-                    + (Boolean.TRUE.equals(
-                            context.agent.getProperties().get(SoarProperties.LEARNING_ON))
-                        ? "enabled"
-                        : "disabled"));
-
-        return true;
       }
     }
   }

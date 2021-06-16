@@ -2,10 +2,11 @@ package org.jsoar.kernel.commands;
 
 import org.jsoar.kernel.Agent;
 import org.jsoar.kernel.SoarProperties;
+import org.jsoar.kernel.commands.ToggleConverter.Toggle;
 import org.jsoar.util.commands.PicocliSoarCommand;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.HelpCommand;
-import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
 /**
  * This is the implementation of the "save-backtraces" command.
@@ -23,37 +24,32 @@ public class SaveBacktracesCommand extends PicocliSoarCommand {
       description = "Toggles or prints backtrace saving",
       subcommands = {HelpCommand.class})
   public static class SaveBacktraces implements Runnable {
-    private Agent agent;
+
+    private final Agent agent;
 
     public SaveBacktraces(Agent agent) {
       this.agent = agent;
     }
 
-    @Option(
-        names = {"on", "-e", "--on", "--enable"},
-        defaultValue = "false",
-        description = "Enables backtrace saving")
-    boolean enable;
-
-    @Option(
-        names = {"off", "-d", "--off", "--disable"},
-        defaultValue = "false",
-        description = "Disables backtrace saving")
-    boolean disable;
+    @Parameters(
+        arity = "0..1",
+        converter = ToggleConverter.class,
+        description = "Enables/disables backtrace saving")
+    Toggle explain;
 
     @Override
     public void run() {
-      if (!enable && !disable) {
+      if (explain == null) {
         agent
             .getPrinter()
             .startNewLine()
             .print(
                 "The current save-backtraces setting is: "
-                    + (agent.getProperties().get(SoarProperties.EXPLAIN) ? "enabled" : "disabled"));
-      } else if (enable) {
-        agent.getProperties().set(SoarProperties.EXPLAIN, true);
+                    + (Boolean.TRUE.equals(agent.getProperties().get(SoarProperties.EXPLAIN))
+                        ? "enabled"
+                        : "disabled"));
       } else {
-        agent.getProperties().set(SoarProperties.EXPLAIN, false);
+        agent.getProperties().set(SoarProperties.EXPLAIN, explain.asBoolean());
       }
     }
   }

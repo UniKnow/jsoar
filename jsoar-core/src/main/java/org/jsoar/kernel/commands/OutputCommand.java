@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 import org.jsoar.kernel.Agent;
 import org.jsoar.kernel.SoarException;
 import org.jsoar.kernel.commands.PrintCommand.Print;
+import org.jsoar.kernel.commands.ToggleConverter.Toggle;
 import org.jsoar.util.TeeWriter;
 import org.jsoar.util.commands.PicocliSoarCommand;
 import picocli.CommandLine.Command;
@@ -291,31 +292,22 @@ public final class OutputCommand extends PicocliSoarCommand {
 
     @ParentCommand Output parent; // injected by picocli
 
-    @Option(
-        names = {"on", "-e", "--on", "--enable"},
-        defaultValue = "false",
-        description = "Enables output warnings")
-    boolean enable;
-
-    @Option(
-        names = {"off", "-d", "--off", "--disable"},
-        defaultValue = "false",
-        description = "Disables output warnings")
-    boolean disable;
+    @Parameters(
+        arity = "0..1",
+        converter = ToggleConverter.class,
+        description = "toggle output warnings")
+    Toggle printWarnings;
 
     @Override
     public void run() {
-      if (!enable && !disable) {
+      if (printWarnings != null) {
+        parent.agent.getPrinter().setPrintWarnings(printWarnings.asBoolean());
+        parent.agent.getPrinter().print("warnings is now " + printWarnings.toString());
+      } else {
         parent
             .agent
             .getPrinter()
             .print("warnings is " + (parent.agent.getPrinter().isPrintWarnings() ? "on" : "off"));
-      } else if (enable) {
-        parent.agent.getPrinter().setPrintWarnings(true);
-        parent.agent.getPrinter().print("warnings is now on");
-      } else {
-        parent.agent.getPrinter().setPrintWarnings(false);
-        parent.agent.getPrinter().print("warnings is now off");
       }
     }
   }

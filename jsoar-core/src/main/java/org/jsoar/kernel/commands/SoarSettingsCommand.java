@@ -4,6 +4,7 @@ import org.jsoar.kernel.Agent;
 import org.jsoar.kernel.JSoarVersion;
 import org.jsoar.kernel.Phase;
 import org.jsoar.kernel.SoarProperties;
+import org.jsoar.kernel.commands.ToggleConverter.Toggle;
 import org.jsoar.runtime.ThreadedAgent;
 import org.jsoar.util.commands.PicocliSoarCommand;
 import org.jsoar.util.timing.ExecutionTimers;
@@ -21,6 +22,7 @@ import picocli.CommandLine.ParentCommand;
  * @author austin.brehob
  */
 public class SoarSettingsCommand extends PicocliSoarCommand {
+
   public SoarSettingsCommand(Agent agent) {
     super(agent, new Soar(agent));
   }
@@ -43,6 +45,7 @@ public class SoarSettingsCommand extends PicocliSoarCommand {
         SoarSettingsCommand.Version.class
       })
   public static class Soar implements Runnable {
+
     private final Agent agent;
     private final ThreadedAgent tAgent;
 
@@ -63,9 +66,10 @@ public class SoarSettingsCommand extends PicocliSoarCommand {
           .getPrinter()
           .startNewLine()
           .print(
-              "=======================================================\n"
-                  + "-                   Soar 9.6.0 Summary                -\n"
-                  + "=======================================================\n");
+              """
+              =======================================================
+              -                   Soar 9.6.0 Summary                -
+              =======================================================""");
     }
   }
 
@@ -74,6 +78,7 @@ public class SoarSettingsCommand extends PicocliSoarCommand {
       description = "Re-initializes Soar",
       subcommands = {HelpCommand.class})
   public static class Init implements Runnable {
+
     @ParentCommand Soar parent; // injected by picocli
 
     @Override
@@ -88,6 +93,7 @@ public class SoarSettingsCommand extends PicocliSoarCommand {
       description = "Maximum elaboration in a decision cycle",
       subcommands = {HelpCommand.class})
   public static class MaxElaborations implements Runnable {
+
     @ParentCommand Soar parent; // injected by picocli
 
     @Parameters(index = "0", arity = "0..1", description = "The new number of maximum elaborations")
@@ -117,6 +123,7 @@ public class SoarSettingsCommand extends PicocliSoarCommand {
       description = "Stop Soar execution",
       subcommands = {HelpCommand.class})
   public static class Stop implements Runnable {
+
     @ParentCommand Soar parent; // injected by picocli
 
     @Override
@@ -134,6 +141,7 @@ public class SoarSettingsCommand extends PicocliSoarCommand {
       description = "Phase before which Soar will stop",
       subcommands = {HelpCommand.class})
   public static class StopPhase implements Runnable {
+
     @ParentCommand Soar parent; // injected by picocli
 
     // These are in the same order as the corresponding entries in the Phase class
@@ -143,7 +151,7 @@ public class SoarSettingsCommand extends PicocliSoarCommand {
       decide,
       apply,
       output
-    };
+    }
 
     @Parameters(
         index = "0",
@@ -173,33 +181,25 @@ public class SoarSettingsCommand extends PicocliSoarCommand {
       description = "Profile where Soar spends its time",
       subcommands = {HelpCommand.class})
   public static class Timers implements Runnable {
+
     @ParentCommand Soar parent; // injected by picocli
 
-    @Option(
-        names = {"on", "-e", "--on", "--enable"},
-        defaultValue = "false",
-        description = "Enables timers")
-    boolean enable;
-
-    @Option(
-        names = {"off", "-d", "--off", "--disable"},
-        defaultValue = "false",
-        description = "Disables timers")
-    boolean disable;
+    @Parameters(
+        arity = "0..1",
+        converter = ToggleConverter.class,
+        description = "Enables/disables timers")
+    Toggle timers;
 
     @Override
     public void run() {
-      if (!enable && !disable) {
+      if (timers == null) {
         parent
             .agent
             .getPrinter()
             .print("timers is " + (ExecutionTimers.isEnabled() ? "on" : "off"));
-      } else if (enable) {
-        ExecutionTimers.setEnabled(true);
-        parent.agent.getPrinter().print("Timers are now enabled.");
       } else {
-        ExecutionTimers.setEnabled(false);
-        parent.agent.getPrinter().print("Timers are now disabled.");
+        ExecutionTimers.setEnabled(timers.asBoolean());
+        parent.agent.getPrinter().print("Timers are now " + timers.toString());
       }
     }
   }
@@ -209,6 +209,7 @@ public class SoarSettingsCommand extends PicocliSoarCommand {
       description = "Wait instead of impasse after state-no-change",
       subcommands = {HelpCommand.class})
   public static class WaitSNC implements Runnable {
+
     @ParentCommand Soar parent; // injected by picocli
 
     @Option(
@@ -231,7 +232,9 @@ public class SoarSettingsCommand extends PicocliSoarCommand {
             .getPrinter()
             .print(
                 "waitsnc is "
-                    + (parent.agent.getProperties().get(SoarProperties.WAITSNC) ? "on" : "off"));
+                    + (Boolean.TRUE.equals(parent.agent.getProperties().get(SoarProperties.WAITSNC))
+                        ? "on"
+                        : "off"));
       } else if (enable) {
         parent.agent.getProperties().set(SoarProperties.WAITSNC, true);
         parent
@@ -250,11 +253,12 @@ public class SoarSettingsCommand extends PicocliSoarCommand {
       description = "Prints the version of Soar to the screen",
       subcommands = {HelpCommand.class})
   public static class Version implements Runnable {
+
     @ParentCommand Soar parent; // injected by picocli
 
     @Override
     public void run() {
-      final JSoarVersion v = JSoarVersion.getInstance();
+      final var v = JSoarVersion.getInstance();
       parent
           .agent
           .getPrinter()
