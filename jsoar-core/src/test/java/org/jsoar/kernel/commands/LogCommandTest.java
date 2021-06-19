@@ -3,8 +3,15 @@ package org.jsoar.kernel.commands;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -12,8 +19,11 @@ import org.jsoar.kernel.Agent;
 import org.jsoar.kernel.LogManager;
 import org.jsoar.kernel.LogManager.EchoMode;
 import org.jsoar.kernel.LogManager.LogLevel;
+import org.jsoar.kernel.LogManager.LoggerException;
 import org.jsoar.kernel.LogManager.SourceLocationMethod;
 import org.jsoar.kernel.SoarException;
+import org.jsoar.kernel.io.InputOutput;
+import org.jsoar.kernel.tracing.Printer;
 import org.jsoar.util.commands.DefaultInterpreter;
 import org.jsoar.util.commands.DefaultSoarCommandContext;
 import org.junit.After;
@@ -49,7 +59,7 @@ public class LogCommandTest {
 
   @Test
   public void testLogInit() throws Exception {
-    Set<String> testSet = new HashSet<String>();
+    Set<String> testSet = new HashSet<>();
     testSet.add("default");
     assertEquals(testSet, logManager.getLoggerNames());
 
@@ -70,7 +80,7 @@ public class LogCommandTest {
         DefaultSoarCommandContext.empty(), new String[] {"log", "--strict", "disable"});
     assertFalse(logManager.isStrict());
 
-    Set<String> testSet = new HashSet<String>();
+    Set<String> testSet = new HashSet<>();
     testSet.add("default");
     assertEquals(testSet, logManager.getLoggerNames());
 
@@ -133,7 +143,7 @@ public class LogCommandTest {
         DefaultSoarCommandContext.empty(), new String[] {"log", "--strict", "enable"});
     assertTrue(logManager.isStrict());
 
-    Set<String> testSet = new HashSet<String>();
+    Set<String> testSet = new HashSet<>();
     testSet.add("default");
     assertEquals(testSet, logManager.getLoggerNames());
 
@@ -328,6 +338,58 @@ public class LogCommandTest {
     setSourceLocationMethod("none", SourceLocationMethod.none);
   }
 
+  @Test
+  public void testLogMessage() throws SoarException, LoggerException {
+    // Given a agent
+    Agent agent = mock(Agent.class);
+    LogManager logManager = mock(LogManager.class);
+    Printer printer = mock(Printer.class);
+    when(printer.asPrintWriter()).thenReturn(mock(PrintWriter.class));
+    when(printer.startNewLine()).thenReturn(printer);
+    when(printer.print(any(String.class))).thenReturn(printer);
+    when(agent.getPrinter()).thenReturn(printer);
+    when(agent.getLogManager()).thenReturn(logManager);
+    when(agent.getInputOutput()).thenReturn(mock(InputOutput.class));
+    // And a log command
+    logCommand = new LogCommand(agent, mock(DefaultInterpreter.class));
+
+    // When logging message at level info
+    logCommand.execute(
+        DefaultSoarCommandContext.empty(),
+        new String[] {"log", "loggerName", "info", "Log message"});
+
+    // Then message is logged to specified logger with specified level
+    verify(logManager, times(1))
+        .log("loggerName", LogLevel.info, Collections.singletonList("Log message"), false);
+  }
+
+  @Test
+  public void testLogMessageWithoutLoggerName() throws SoarException, LoggerException {
+    // Given a agent
+    Agent agent = mock(Agent.class);
+    LogManager logManager = mock(LogManager.class);
+    Printer printer = mock(Printer.class);
+    when(printer.asPrintWriter()).thenReturn(mock(PrintWriter.class));
+    when(printer.startNewLine()).thenReturn(printer);
+    when(printer.print(any(String.class))).thenReturn(printer);
+    when(agent.getPrinter()).thenReturn(printer);
+    when(agent.getLogManager()).thenReturn(logManager);
+    when(agent.getInputOutput()).thenReturn(mock(InputOutput.class));
+    // And specified source location method is none
+    when(logManager.getAbbreviate()).thenReturn(true);
+    when(logManager.getSourceLocationMethod()).thenReturn(SourceLocationMethod.none);
+    // And a log command
+    logCommand = new LogCommand(agent, mock(DefaultInterpreter.class));
+
+    // When logging message at level info without specifying
+    logCommand.execute(
+        DefaultSoarCommandContext.empty(), new String[] {"log", "info", "Log message"});
+
+    // Then message is logged to logger default with specified level
+    verify(logManager, times(1))
+        .log("default", LogLevel.info, Collections.singletonList("Log message"), false);
+  }
+
   private void setSourceLocationMethod(
       String argument, SourceLocationMethod expectedSourceLocationMethod) throws SoarException {
     logCommand.execute(
@@ -379,8 +441,6 @@ public class LogCommandTest {
   /**
    * This is just a performance test for when nothing should be logged. It shouldn't fail unless
    * other tests here also fail.
-   *
-   * @throws SoarException
    */
   @Test
   public void testPerformance() throws SoarException {

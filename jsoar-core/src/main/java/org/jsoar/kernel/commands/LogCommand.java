@@ -277,25 +277,7 @@ public class LogCommand extends PicocliSoarCommand {
             logLevel = LogManager.LogLevel.fromString(log.params[0]);
 
             // The user omitted LOGGER-NAME (we know because we just properly parsed the log level).
-            loggerName =
-                log.getSourceLocation(
-                    log.context,
-                    log.logManager.getAbbreviate(),
-                    log.logManager.getSourceLocationMethod());
-            if (loggerName != null) {
-              // Prevent strict mode from biting us.
-              if (!log.logManager.hasLogger(loggerName)) {
-                try {
-                  log.logManager.addLogger(loggerName);
-                } catch (LoggerException e) {
-                  throw new ParameterException(log.spec.commandLine(), e.getMessage(), e);
-                }
-              }
-            }
-
-            if (loggerName == null) {
-              loggerName = "default";
-            }
+            loggerName = getCurrentLoggerName(log);
 
             parameters = Arrays.asList(Arrays.copyOfRange(log.params, 1, log.params.length));
           } catch (IllegalArgumentException e) {
@@ -321,6 +303,28 @@ public class LogCommand extends PicocliSoarCommand {
           }
         }
         return true;
+      }
+
+      private String getCurrentLoggerName(Log log) {
+        String loggerName =
+            log.getSourceLocation(
+                log.context,
+                log.logManager.getAbbreviate(),
+                log.logManager.getSourceLocationMethod());
+        if (loggerName != null) {
+          // Prevent strict mode from biting us.
+          if (!log.logManager.hasLogger(loggerName)) {
+            try {
+              log.logManager.addLogger(loggerName);
+            } catch (LoggerException e) {
+              throw new ParameterException(log.spec.commandLine(), e.getMessage(), e);
+            }
+          }
+        } else {
+          loggerName = "default";
+        }
+
+        return loggerName;
       }
     }
 
@@ -414,6 +418,7 @@ public class LogCommand extends PicocliSoarCommand {
         converter = BooleanTypeConverter.class)
     private Optional<Boolean> abbreviate;
 
+    // log <loggerName> <loggingLevel> <[message]>
     @Parameters(
         description =
             "The logger to enable/disable or send a message to, "
@@ -524,24 +529,26 @@ public class LogCommand extends PicocliSoarCommand {
         }
       }
 
-      var result = "";
+      var result = new StringBuilder();
 
       int diff = cwdParts.length - marker;
       if (diff > 0) {
-        result += "^" + diff + SOURCE_LOCATION_SEPARATOR;
+        result.append("^");
+        result.append(diff);
+        result.append(SOURCE_LOCATION_SEPARATOR);
       }
 
       for (int i = marker; i < fileParts.length - 1; ++i) {
         if (abbreviate) {
-          result += fileParts[i].charAt(0);
+          result.append(fileParts[i].charAt(0));
         } else {
-          result += fileParts[i];
+          result.append(fileParts[i]);
         }
-        result += SOURCE_LOCATION_SEPARATOR;
+        result.append(SOURCE_LOCATION_SEPARATOR);
       }
-      result += fileParts[fileParts.length - 1];
+      result.append(fileParts[fileParts.length - 1]);
 
-      return result;
+      return result.toString();
     }
   }
 }
