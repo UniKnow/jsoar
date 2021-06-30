@@ -50,4 +50,8 @@ An agent selects actions to achieve its goals on the basis of the available know
 
 As one progress up the hierarchy the behavior is at longer time scales. The timescales at the physical level is between nano and microseconds, the cognitive level between milliseconds and tens of seconds, and the knowledge level between minutes and hours.
 
+There is a great diversity in cognitive architectures, but they can be split into the following three general categories corresponding to different long-term research goals:
+
+. Cognitive modeling - The goal is to support the development of models of human behavior that match biological data such as reaction times, error rates and even MRI results.
+. Agent development - ...
 
