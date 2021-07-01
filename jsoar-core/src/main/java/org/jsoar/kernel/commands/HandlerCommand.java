@@ -1,9 +1,9 @@
 package org.jsoar.kernel.commands;
 
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 import org.jsoar.kernel.Agent;
 import org.jsoar.kernel.rhs.functions.RhsFunctionHandler;
-import org.jsoar.kernel.rhs.functions.RhsFunctionManager;
 import org.jsoar.util.commands.PicocliSoarCommand;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.HelpCommand;
@@ -25,7 +25,8 @@ public class HandlerCommand extends PicocliSoarCommand {
       description = "Prints, enables, or disables RHS functions",
       subcommands = {HelpCommand.class})
   public static class Handler implements Callable<String> {
-    private Agent agent;
+
+    private final Agent agent;
 
     public Handler(Agent agent) {
       this.agent = agent;
@@ -43,7 +44,7 @@ public class HandlerCommand extends PicocliSoarCommand {
 
     @Override
     public String call() {
-      RhsFunctionManager rhsFunctionManager = agent.getRhsFunctions();
+      var rhsFunctionManager = agent.getRhsFunctions();
 
       if (functionToEnable != null) {
         rhsFunctionManager.enableHandler(functionToEnable);
@@ -52,11 +53,11 @@ public class HandlerCommand extends PicocliSoarCommand {
         rhsFunctionManager.disableHandler(functionToDisable);
         return "RHS function disabled: " + functionToDisable;
       } else {
-        String result = "===== Disabled RHS Functions =====\n";
-        for (RhsFunctionHandler handler : rhsFunctionManager.getDisabledHandlers()) {
-          result += handler.getName() + "\n";
-        }
-        return result;
+        String handlerNames =
+            rhsFunctionManager.getDisabledHandlers().stream()
+                .map(RhsFunctionHandler::getName)
+                .collect(Collectors.joining("\n"));
+        return "===== Disabled RHS Functions =====\n" + handlerNames + "\n";
       }
     }
   }

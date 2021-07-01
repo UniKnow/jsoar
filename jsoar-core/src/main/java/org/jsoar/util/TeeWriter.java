@@ -16,7 +16,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author ray
  */
 public class TeeWriter extends Writer {
-  private final List<Writer> writers = new CopyOnWriteArrayList<Writer>();
+  private final List<Writer> writers = new CopyOnWriteArrayList<>();
 
   /**
    * Construct a new TeeWriter
@@ -25,7 +25,7 @@ public class TeeWriter extends Writer {
    */
   public TeeWriter(Writer... writers) {
     for (Writer writer : writers) {
-      this.writers.add(writer);
+      addWriter(writer);
     }
   }
 
@@ -37,9 +37,7 @@ public class TeeWriter extends Writer {
     this.writers.remove(writer);
   }
 
-  /* (non-Javadoc)
-   * @see java.io.Writer#close()
-   */
+  /** {@inheritDoc} */
   @Override
   public void close() throws IOException {
     for (Writer w : writers) {
@@ -47,9 +45,7 @@ public class TeeWriter extends Writer {
     }
   }
 
-  /* (non-Javadoc)
-   * @see java.io.Writer#flush()
-   */
+  /** {@inheritDoc} */
   @Override
   public void flush() throws IOException {
     for (Writer w : writers) {
@@ -57,9 +53,7 @@ public class TeeWriter extends Writer {
     }
   }
 
-  /* (non-Javadoc)
-   * @see java.io.Writer#write(char[], int, int)
-   */
+  /** {@inheritDoc} */
   @Override
   public void write(char[] cbuf, int off, int len) throws IOException {
     for (Writer w : writers) {

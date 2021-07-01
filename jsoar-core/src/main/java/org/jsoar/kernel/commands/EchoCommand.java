@@ -33,20 +33,15 @@ public class EchoCommand extends PicocliSoarCommand {
         names = {"-n", "--no-newline"},
         defaultValue = "false",
         description = "Suppress printing of the newline character")
-    boolean noNewline;
+    private boolean noNewline;
 
     @Parameters(description = "The string to output")
-    String[] outputString = null;
+    private String[] outputString = null;
 
     @Override
     public void run() {
       if (outputString != null) {
-        for (var i = 0; i < outputString.length; i++) {
-          if (i != 0) {
-            agent.getPrinter().print(" ");
-          }
-          agent.getPrinter().print(outputString[i]);
-        }
+        agent.getPrinter().print(String.join(" ", outputString));
       }
 
       if (!noNewline) {

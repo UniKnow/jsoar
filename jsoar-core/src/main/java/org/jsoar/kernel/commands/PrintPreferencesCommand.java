@@ -7,6 +7,8 @@ package org.jsoar.kernel.commands;
 
 import java.io.IOException;
 import java.util.Iterator;
+import lombok.Getter;
+import lombok.Setter;
 import org.jsoar.kernel.Agent;
 import org.jsoar.kernel.Decider;
 import org.jsoar.kernel.ImpasseType;
@@ -34,10 +36,14 @@ import org.jsoar.util.adaptables.Adaptables;
 public class PrintPreferencesCommand {
 
   private IdentifierImpl id;
-  private Symbol attr;
-  private boolean object = false;
-  private boolean print_prod = false;
-  private WmeTraceType wtt = WmeTraceType.NONE;
+
+  @Getter @Setter private Symbol attr;
+
+  @Getter @Setter private boolean object = false;
+
+  @Getter @Setter private boolean printProduction = false;
+
+  @Getter @Setter private WmeTraceType wmeTraceType = WmeTraceType.NONE;
 
   /** @return the id */
   public Identifier getId() {
@@ -47,46 +53,6 @@ public class PrintPreferencesCommand {
   /** @param id the id to set */
   public void setId(Identifier id) {
     this.id = (IdentifierImpl) id;
-  }
-
-  /** @return the attr */
-  public Symbol getAttr() {
-    return attr;
-  }
-
-  /** @param attr the attr to set */
-  public void setAttr(Symbol attr) {
-    this.attr = attr;
-  }
-
-  /** @return the object */
-  public boolean isObject() {
-    return object;
-  }
-
-  /** @param object the object to set */
-  public void setObject(boolean object) {
-    this.object = object;
-  }
-
-  /** @return the print_prod */
-  public boolean getPrintProduction() {
-    return print_prod;
-  }
-
-  /** @param print_prod the print_prod to set */
-  public void setPrintProduction(boolean print_prod) {
-    this.print_prod = print_prod;
-  }
-
-  /** @return the wtt */
-  public WmeTraceType getWmeTraceType() {
-    return wtt;
-  }
-
-  /** @param wtt the wtt to set */
-  public void setWmeTraceType(WmeTraceType wtt) {
-    this.wtt = wtt;
   }
 
   /**
@@ -107,19 +73,21 @@ public class PrintPreferencesCommand {
     // 3. default (no args): return prefs of slot (id, attr) <s> ^operator
 
     if (object) {
-      // step thru dll of slots for ID, printing prefs for each one
+      // step through list of slots for ID, printing prefs for each one
       for (Slot s = id.slots; s != null; s = s.next) {
         if (s.attr == predefinedSyms.operator_symbol) {
           printer.print("Preferences for %s ^%s:", s.id, s.attr);
         } else {
           printer.print("Support for %s ^%s:\n", s.id, s.attr);
         }
+
         for (PreferenceType pt : PreferenceType.values()) {
-          if (s.getPreferencesByType(pt) != null) {
+          var preference = s.getPreferencesByType(pt);
+          if (preference != null) {
             if (s.isa_context_slot) {
               printer.print("\n%ss:\n", pt.getDisplayName());
             }
-            for (var p = s.getPreferencesByType(pt); p != null; p = p.next) {
+            for (var p = preference; p != null; p = p.next) {
               print_preference_and_source(agent, printer, p);
             }
           }
@@ -262,9 +230,9 @@ public class PrintPreferencesCommand {
       printer.print("(%.1f%%)", selection_probability * 100.0);
     }
     printer.print("\n");
-    if (print_prod) {
+    if (printProduction) {
       printer.print("    From ");
-      pref.inst.trace(printer.asFormatter(), wtt);
+      pref.inst.trace(printer.asFormatter(), wmeTraceType);
       printer.print("\n");
     }
   }

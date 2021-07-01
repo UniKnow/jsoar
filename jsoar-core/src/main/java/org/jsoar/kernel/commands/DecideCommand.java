@@ -2,12 +2,17 @@ package org.jsoar.kernel.commands;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.jsoar.kernel.Agent;
 import org.jsoar.kernel.DecisionManipulation;
 import org.jsoar.kernel.exploration.Exploration;
 import org.jsoar.util.PrintHelper;
 import org.jsoar.util.adaptables.Adaptables;
 import org.jsoar.util.commands.PicocliSoarCommand;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.HelpCommand;
 import picocli.CommandLine.Option;
@@ -20,6 +25,7 @@ import picocli.CommandLine.ParentCommand;
  * @author austin.brehob
  */
 public class DecideCommand extends PicocliSoarCommand {
+
   private static final int DISPLAY_COLUMNS = 55;
 
   public DecideCommand(Agent agent) {
@@ -40,9 +46,10 @@ public class DecideCommand extends PicocliSoarCommand {
         DecideCommand.SetRandomSeed.class
       })
   public static class Decide implements Runnable {
-    private Agent agent;
-    private Exploration exploration;
-    private DecisionManipulation decisionManipulation;
+
+    private final Agent agent;
+    private final Exploration exploration;
+    private final DecisionManipulation decisionManipulation;
 
     public Decide(Agent agent) {
       this.agent = agent;
@@ -56,8 +63,8 @@ public class DecideCommand extends PicocliSoarCommand {
     }
 
     private void printCurrentDecideSettings() {
-      final StringWriter sw = new StringWriter();
-      final PrintWriter pw = new PrintWriter(sw);
+      final var sw = new StringWriter();
+      final var pw = new PrintWriter(sw);
 
       pw.printf(PrintHelper.generateHeader("Decide Summary", DISPLAY_COLUMNS));
       pw.printf(currentNumericIndifferentMode(exploration));
@@ -86,37 +93,73 @@ public class DecideCommand extends PicocliSoarCommand {
               + "selection between operator proposals that are mutually indifferent in preference memory",
       subcommands = {HelpCommand.class})
   public static class IndifferentSelection implements Runnable {
+
+    /*
+     * Contains list of actions that can be performed by this command
+     */
+    private static final List<Action<IndifferentSelection>> ACTIONS =
+        Stream.of(
+                new SetExplorationPolicy(),
+                new SetReductionPolicy(),
+                new SetReductionRate(),
+                new SetAutoUpdate(),
+                new EpsilonValue(),
+                new TemperatureValue(),
+                new PrintStats(),
+                new PrintPolicy())
+            .collect(Collectors.toList());
+
     @ParentCommand Decide parent; // injected by picocli
 
-    @Option(
-        names = {"-b", "--boltzmann"},
-        defaultValue = "false",
-        description = "Sets the exploration policy to 'boltzmann'")
-    boolean boltzmannPolicy;
+    @ArgGroup(exclusive = true)
+    Policy policy;
 
-    @Option(
-        names = {"-E", "--epsilon-greedy"},
-        defaultValue = "false",
-        description = "Sets the exploration policy to 'epsilon-greedy'")
-    boolean epsilonGreedyPolicy;
+    private static class Policy {
 
-    @Option(
-        names = {"-f", "--first"},
-        defaultValue = "false",
-        description = "Sets the exploration policy to 'first'")
-    boolean firstPolicy;
+      @Option(
+          names = {"-b", "--boltzmann"},
+          defaultValue = "false",
+          description = "Sets the exploration policy to 'boltzmann'")
+      boolean boltzmannPolicy;
 
-    @Option(
-        names = {"-l", "--last"},
-        defaultValue = "false",
-        description = "Sets the exploration policy to 'last'")
-    boolean lastPolicy;
+      @Option(
+          names = {"-E", "--epsilon-greedy"},
+          defaultValue = "false",
+          description = "Sets the exploration policy to 'epsilon-greedy'")
+      boolean epsilonGreedyPolicy;
 
-    @Option(
-        names = {"-s", "--softmax"},
-        defaultValue = "false",
-        description = "Sets the exploration policy to 'softmax'")
-    boolean softmaxPolicy;
+      @Option(
+          names = {"-f", "--first"},
+          defaultValue = "false",
+          description = "Sets the exploration policy to 'first'")
+      boolean firstPolicy;
+
+      @Option(
+          names = {"-l", "--last"},
+          defaultValue = "false",
+          description = "Sets the exploration policy to 'last'")
+      boolean lastPolicy;
+
+      @Option(
+          names = {"-s", "--softmax"},
+          defaultValue = "false",
+          description = "Sets the exploration policy to 'softmax'")
+      boolean softmaxPolicy;
+
+      String getName() {
+        String policyName = Exploration.Policy.USER_SELECT_BOLTZMANN.getPolicyName();
+        if (epsilonGreedyPolicy) {
+          policyName = Exploration.Policy.USER_SELECT_E_GREEDY.getPolicyName();
+        } else if (firstPolicy) {
+          policyName = Exploration.Policy.USER_SELECT_FIRST.getPolicyName();
+        } else if (lastPolicy) {
+          policyName = Exploration.Policy.USER_SELECT_LAST.getPolicyName();
+        } else if (softmaxPolicy) {
+          policyName = Exploration.Policy.USER_SELECT_SOFTMAX.getPolicyName();
+        }
+        return policyName;
+      }
+    }
 
     @Option(
         names = {"-e", "--epsilon"},
@@ -132,12 +175,12 @@ public class DecideCommand extends PicocliSoarCommand {
 
     @Option(
         names = {"-p", "--reduction-policy"},
-        description = "Prints or updates the " + "reduction policy for the given parameter")
+        description = "Prints or updates the reduction policy for the given parameter")
     String reductionPolicyParam;
 
     @Option(
         names = {"-r", "--reduction-rate"},
-        description = "Prints or updates the " + "reduction rate for the given parameter")
+        description = "Prints or updates the reduction rate for the given parameter")
     String reductionRateParam;
 
     @Option(
@@ -156,9 +199,7 @@ public class DecideCommand extends PicocliSoarCommand {
         index = "0",
         arity = "0..1",
         description =
-            "New epsilon/temperature value; or exploration "
-                + "parameter reduction policy: 'linear' or 'exponential'; or toggles auto-reduce: "
-                + "'on' or 'off'")
+            "New epsilon/temperature value; or exploration  parameter reduction policy: 'linear' or 'exponential'; or toggles auto-reduce: 'on' or 'off'")
     private String param;
 
     @Parameters(
@@ -169,278 +210,433 @@ public class DecideCommand extends PicocliSoarCommand {
 
     @Override
     public void run() {
-      // If the user specified multiple options...
-      if ((boltzmannPolicy ? 1 : 0)
-              + (epsilonGreedyPolicy ? 1 : 0)
-              + (firstPolicy ? 1 : 0)
-              + (lastPolicy ? 1 : 0)
-              + (softmaxPolicy ? 1 : 0)
-              + (epsilon ? 1 : 0)
-              + (temperature ? 1 : 0)
-              + ((reductionPolicyParam != null) ? 1 : 0)
-              + ((reductionRateParam != null) ? 1 : 0)
-              + (autoReduce ? 1 : 0)
-              + (printStats ? 1 : 0)
-          >= 2) {
-        parent
+
+      // Traverse list of actions until successfully handled
+      for (Action<IndifferentSelection> action : ACTIONS) {
+        if (action.execute(this)) {
+          return;
+        }
+      }
+    }
+
+    private interface SetParameterValue extends Action<IndifferentSelection> {
+
+      default void printValue(final IndifferentSelection context, final String parameterName) {
+        context
+            .parent
             .agent
             .getPrinter()
             .startNewLine()
-            .print("indifferent-selection " + "takes only one option at a time.");
-        return;
+            .print(currentParameterValue(context.parent.exploration, parameterName));
       }
 
-      // decide indifferent-selection --<policyName>
-      if (boltzmannPolicy || epsilonGreedyPolicy || firstPolicy || lastPolicy || softmaxPolicy) {
-        String policyName = "boltzmann";
-        if (epsilonGreedyPolicy) {
-          policyName = "epsilon-greedy";
-        } else if (firstPolicy) {
-          policyName = "first";
-        } else if (lastPolicy) {
-          policyName = "last";
-        } else if (softmaxPolicy) {
-          policyName = "softmax";
-        }
+      default void setValue(final IndifferentSelection context, final String parameterName) {
+        try {
+          var newValue = Double.parseDouble(context.param);
 
-        if (parent.exploration.exploration_set_policy(policyName)) {
-          parent
-              .agent
-              .getPrinter()
-              .startNewLine()
-              .print("Set decide " + "indifferent-selection policy to " + policyName);
-        } else {
-          parent
-              .agent
-              .getPrinter()
-              .startNewLine()
-              .print("Failed to set decide " + "indifferent-selection policy to " + policyName);
-        }
-      }
-
-      // decide indifferent-selection --epsilon/--temperature ...
-      else if (epsilon || temperature) {
-        String parameterName = "epsilon";
-        if (temperature) {
-          parameterName = "temperature";
-        }
-
-        // decide indifferent-selection --epsilon/--temperature
-        if (param == null) {
-          parent
-              .agent
-              .getPrinter()
-              .startNewLine()
-              .print(currentParameterValue(parent.exploration, parameterName));
-        }
-        // decide indifferent-selection --epsilon/--temperature <newValue>
-        else {
-          Double newValue = null;
-
-          try {
-            newValue = Double.parseDouble(param);
-
-            if (parent.exploration.exploration_valid_parameter_value(parameterName, newValue)) {
-              if (parent.exploration.exploration_set_parameter_value(parameterName, newValue)) {
-                parent
-                    .agent
-                    .getPrinter()
-                    .startNewLine()
-                    .print("Set decide " + parameterName + " parameter value to " + newValue);
-              } else {
-                parent
-                    .agent
-                    .getPrinter()
-                    .startNewLine()
-                    .print(
-                        "Unknown error trying "
-                            + "to set decide "
-                            + parameterName
-                            + " parameter value");
-              }
-            } else {
-              parent
+          if (context.parent.exploration.exploration_valid_parameter_value(
+              parameterName, newValue)) {
+            if (context.parent.exploration.exploration_set_parameter_value(
+                parameterName, newValue)) {
+              context
+                  .parent
                   .agent
                   .getPrinter()
                   .startNewLine()
-                  .print("Illegal value " + "for decide " + parameterName + " parameter value");
+                  .print("Set " + parameterName + "parameter value to " + newValue);
+            } else {
+              context
+                  .parent
+                  .agent
+                  .getPrinter()
+                  .startNewLine()
+                  .print("Unknown error trying to set " + parameterName + " parameter value");
             }
-          } catch (NumberFormatException e) {
-            parent
+          } else {
+            context
+                .parent
                 .agent
                 .getPrinter()
                 .startNewLine()
-                .print(String.format("%s is not a valid double: %s", param, e.getMessage()));
+                .print("Illegal value for " + parameterName + " parameter value");
           }
+        } catch (NumberFormatException e) {
+          context
+              .parent
+              .agent
+              .getPrinter()
+              .startNewLine()
+              .print(String.format("%s is not a valid double: %s", context.param, e.getMessage()));
         }
       }
+    }
 
-      // decide indifferent-selection --reduction-policy epsilon/temperature ...
-      else if (reductionPolicyParam != null) {
-        if (parent.exploration.exploration_valid_parameter(reductionPolicyParam)) {
-          // decide indifferent-selection --reduction-policy epsilon/temperature
-          if (param == null) {
-            parent
-                .agent
-                .getPrinter()
-                .startNewLine()
-                .print(currentParameterReductionPolicy(parent.exploration, reductionPolicyParam));
+    private static class EpsilonValue implements SetParameterValue {
+
+      @Override
+      public boolean execute(IndifferentSelection context) {
+        var handled = false;
+        if (context.epsilon) {
+
+          if (context.param == null) {
+            // decide indifferent-selection --epsilon
+            printValue(context, "epsilon");
+          } else {
+            // decide indifferent-selection --epsilon <newValue>
+            setValue(context, "epsilon");
           }
-          // decide indifferent-selection --reduction-policy epsilon/temperature exponential/linear
-          else {
-            if (parent.exploration.exploration_set_reduction_policy(reductionPolicyParam, param)) {
-              parent
-                  .agent
-                  .getPrinter()
-                  .startNewLine()
-                  .print("Set " + reductionPolicyParam + " reduction policy to " + param);
-            } else {
-              parent
-                  .agent
-                  .getPrinter()
-                  .startNewLine()
-                  .print(
-                      "Illegal value for " + reductionPolicyParam + " reduction policy: " + param);
-            }
-          }
-        } else {
-          parent
-              .agent
-              .getPrinter()
-              .startNewLine()
-              .print("Unknown " + "parameter name: " + reductionPolicyParam);
+
+          handled = true;
         }
+        return handled;
+      }
+    }
+
+    private static class TemperatureValue implements SetParameterValue {
+
+      @Override
+      public boolean execute(IndifferentSelection context) {
+        var handled = false;
+        if (context.temperature) {
+
+          if (context.param == null) {
+            // decide indifferent-selection --temperature
+            printValue(context, "temperature");
+          } else {
+            // decide indifferent-selection --temperature <newValue>
+            setValue(context, "temperature");
+          }
+
+          handled = true;
+        }
+        return handled;
+      }
+    }
+
+    private static class PrintPolicy implements Action<IndifferentSelection> {
+
+      @Override
+      public boolean execute(IndifferentSelection context) {
+        // decide indifferent-selection
+        context
+            .parent
+            .agent
+            .getPrinter()
+            .startNewLine()
+            .print(currentPolicy(context.parent.exploration));
+
+        return true;
+      }
+    }
+
+    private static class PrintStats implements Action<IndifferentSelection> {
+
+      @Override
+      public boolean execute(IndifferentSelection context) {
+        var handled = false;
+
+        if (context.printStats) {
+          // decide indifferent-selection --stats
+          final var sw = new StringWriter();
+          final var pw = new PrintWriter(sw);
+          final Decide parent = context.parent;
+
+          pw.printf(currentPolicy(parent.exploration));
+          pw.printf(currentAutoReduceSetting(parent.exploration));
+          pw.printf(currentParameterValue(parent.exploration, "epsilon"));
+          pw.printf(currentParameterReductionPolicy(parent.exploration, "epsilon"));
+          pw.printf(currentParameterReductionRate(parent.exploration, "epsilon", "exponential"));
+          pw.printf(currentParameterReductionRate(parent.exploration, "epsilon", "linear"));
+          pw.printf(currentParameterValue(parent.exploration, "temperature"));
+          pw.printf(currentParameterReductionPolicy(parent.exploration, "temperature"));
+          pw.printf(
+              currentParameterReductionRate(parent.exploration, "temperature", "exponential"));
+          pw.printf(currentParameterReductionRate(parent.exploration, "temperature", "linear"));
+
+          pw.flush();
+          parent.agent.getPrinter().startNewLine().print(sw.toString());
+
+          handled = true;
+        }
+
+        return handled;
+      }
+    }
+
+    private static class SetAutoUpdate implements Action<IndifferentSelection> {
+
+      private void printValue(final IndifferentSelection context) {
+        context
+            .parent
+            .agent
+            .getPrinter()
+            .startNewLine()
+            .print(currentAutoReduceSetting(context.parent.exploration));
       }
 
-      // decide indifferent-selection --reduction-rate epsilon/temperature ...
-      else if (reductionRateParam != null) {
-        if (parent.exploration.exploration_valid_parameter(reductionRateParam)) {
-          // decide indifferent-selection --reduction-rate epsilon/temperature
-          if (param == null) {
-            parent
-                .agent
-                .getPrinter()
-                .startNewLine()
-                .print("Error: exploration " + "parameter reduction policy must be specified");
-          }
-          // decide indifferent-selection --reduction-rate
-          // epsilon/temperature exponential/linear ...
-          else {
-            if (parent.exploration.exploration_valid_reduction_policy(reductionRateParam, param)) {
-              // decide indifferent-selection --reduction-rate
-              // epsilon/temperature exponential/linear
-              if (reductionRate == null) {
-                parent
-                    .agent
-                    .getPrinter()
-                    .startNewLine()
-                    .print(
-                        currentParameterReductionRate(
-                            parent.exploration, reductionRateParam, param));
-              }
-              // decide indifferent-selection --reduction-rate
-              // epsilon/temperature exponential/linear <newRate>
-              else {
-                if (parent.exploration.exploration_set_reduction_rate(
-                    reductionRateParam, param, reductionRate)) {
-                  parent
-                      .agent
-                      .getPrinter()
-                      .startNewLine()
-                      .print(
-                          "Set "
-                              + reductionRateParam
-                              + " "
-                              + param
-                              + " reduction "
-                              + "rate to "
-                              + reductionRate);
-                } else {
-                  parent
-                      .agent
-                      .getPrinter()
-                      .startNewLine()
-                      .print(
-                          "Illegal value for "
-                              + reductionRateParam
-                              + " "
-                              + param
-                              + " reduction rate: "
-                              + reductionRate);
-                }
-              }
-            } else {
-              parent
-                  .agent
-                  .getPrinter()
-                  .startNewLine()
-                  .print("Unknown " + "reduction policy name: " + param);
-            }
-          }
+      private void setValue(final IndifferentSelection context) {
+        if (context.param.equals("on")) {
+          context.parent.exploration.exploration_set_auto_update(true);
+          context
+              .parent
+              .agent
+              .getPrinter()
+              .startNewLine()
+              .print("Enabled decide indifferent-selection auto-update");
+        } else if (context.param.equals("off")) {
+          context.parent.exploration.exploration_set_auto_update(false);
+          context
+              .parent
+              .agent
+              .getPrinter()
+              .startNewLine()
+              .print("Disabled decide indifferent-selection auto-update");
         } else {
-          parent
-              .agent
-              .getPrinter()
-              .startNewLine()
-              .print("Unknown " + "parameter name: " + reductionRateParam);
-        }
-      }
-
-      // decide indifferent-selection --auto-reduce ...
-      else if (autoReduce) {
-        if (param == null) {
-          parent
-              .agent
-              .getPrinter()
-              .startNewLine()
-              .print(currentAutoReduceSetting(parent.exploration));
-        } else if (param.equals("on")) {
-          parent.exploration.exploration_set_auto_update(true);
-          parent
-              .agent
-              .getPrinter()
-              .startNewLine()
-              .print("Enabled " + "decide indifferent-selection auto-update");
-        } else if (param.equals("off")) {
-          parent.exploration.exploration_set_auto_update(false);
-          parent
-              .agent
-              .getPrinter()
-              .startNewLine()
-              .print("Disabled " + "decide indifferent-selection auto-update");
-        } else {
-          parent
+          context
+              .parent
               .agent
               .getPrinter()
               .startNewLine()
               .print(
-                  "Illegal argument to " + "decide indifferent-selection --auto-reduce: " + param);
+                  "Illegal argument to decide indifferent-selection --auto-reduce: "
+                      + context.param);
         }
       }
 
-      // decide indifferent-selection --stats
-      else if (printStats) {
-        final StringWriter sw = new StringWriter();
-        final PrintWriter pw = new PrintWriter(sw);
+      @Override
+      public boolean execute(IndifferentSelection context) {
+        var handled = false;
 
-        pw.printf(currentPolicy(parent.exploration));
-        pw.printf(currentAutoReduceSetting(parent.exploration));
-        pw.printf(currentParameterValue(parent.exploration, "epsilon"));
-        pw.printf(currentParameterReductionPolicy(parent.exploration, "epsilon"));
-        pw.printf(currentParameterReductionRate(parent.exploration, "epsilon", "exponential"));
-        pw.printf(currentParameterReductionRate(parent.exploration, "epsilon", "linear"));
-        pw.printf(currentParameterValue(parent.exploration, "temperature"));
-        pw.printf(currentParameterReductionPolicy(parent.exploration, "temperature"));
-        pw.printf(currentParameterReductionRate(parent.exploration, "temperature", "exponential"));
-        pw.printf(currentParameterReductionRate(parent.exploration, "temperature", "linear"));
+        // decide indifferent-selection --auto-reduce ...
+        if (context.autoReduce) {
+          if (context.param == null) {
+            printValue(context);
+          } else {
+            setValue(context);
+          }
+          handled = true;
+        }
 
-        pw.flush();
-        parent.agent.getPrinter().startNewLine().print(sw.toString());
+        return handled;
+      }
+    }
+
+    private static class SetReductionRate implements Action<IndifferentSelection> {
+
+      private void printValue(
+          final IndifferentSelection context, final String parameterName, final String policy) {
+        context
+            .parent
+            .agent
+            .getPrinter()
+            .startNewLine()
+            .print(
+                currentParameterReductionRate(context.parent.exploration, parameterName, policy));
       }
 
-      // decide indifferent-selection
-      else {
-        parent.agent.getPrinter().startNewLine().print(currentPolicy(parent.exploration));
+      private void setValue(
+          final IndifferentSelection context,
+          final String parameterName,
+          final String policy,
+          Double reductionRate) {
+        // decide indifferent-selection --reduction-rate
+        // epsilon/temperature exponential/linear <newRate>
+        if (context.parent.exploration.exploration_set_reduction_rate(
+            parameterName, policy, reductionRate)) {
+          context
+              .parent
+              .agent
+              .getPrinter()
+              .startNewLine()
+              .print(
+                  "Set "
+                      + parameterName
+                      + " "
+                      + policy
+                      + " reduction "
+                      + "rate to "
+                      + reductionRate);
+        } else {
+          context
+              .parent
+              .agent
+              .getPrinter()
+              .startNewLine()
+              .print(
+                  "Illegal value for "
+                      + parameterName
+                      + " "
+                      + policy
+                      + " reduction rate: "
+                      + reductionRate);
+        }
+      }
+
+      private boolean validParameter(
+          final IndifferentSelection context, final String parameterName) {
+        var validParameter = context.parent.exploration.exploration_valid_parameter(parameterName);
+        if (!validParameter) {
+          context
+              .parent
+              .agent
+              .getPrinter()
+              .startNewLine()
+              .print("Unknown parameter name: " + parameterName);
+        }
+        return validParameter;
+      }
+
+      private boolean validReductionPolicy(
+          final IndifferentSelection context,
+          final String parameterName,
+          final String reductionPolicy) {
+
+        var valid = false;
+
+        if (reductionPolicy == null) {
+          context
+              .parent
+              .agent
+              .getPrinter()
+              .startNewLine()
+              .print("Error: exploration parameter reduction policy must be specified");
+        } else {
+          if (context.parent.exploration.exploration_valid_reduction_policy(
+              parameterName, reductionPolicy)) {
+            valid = true;
+          } else {
+            context
+                .parent
+                .agent
+                .getPrinter()
+                .startNewLine()
+                .print("Unknown reduction policy name: " + reductionPolicy);
+          }
+        }
+
+        return valid;
+      }
+
+      @Override
+      public boolean execute(final IndifferentSelection context) {
+        var handled = false;
+
+        // decide indifferent-selection --reduction-rate epsilon/temperature ...
+        final String parameterName = context.reductionRateParam;
+        if (parameterName != null) {
+          final String reductionPolicy = context.param;
+          if (validParameter(context, parameterName)
+              && validReductionPolicy(context, parameterName, reductionPolicy)) {
+            // decide indifferent-selection --reduction-rate epsilon/temperature exponential/linear
+            Double reductionRate = context.reductionRate;
+            if (reductionRate == null) {
+              printValue(context, parameterName, reductionPolicy);
+            } else {
+              setValue(context, parameterName, reductionPolicy, reductionRate);
+            }
+          }
+
+          handled = true;
+        }
+
+        return handled;
+      }
+    }
+
+    private static class SetReductionPolicy implements Action<IndifferentSelection> {
+
+      private void printValue(IndifferentSelection context) {
+        context
+            .parent
+            .agent
+            .getPrinter()
+            .startNewLine()
+            .print(
+                currentParameterReductionPolicy(
+                    context.parent.exploration, context.reductionPolicyParam));
+      }
+
+      private void setValue(IndifferentSelection context) {
+        final String reductionPolicy = context.reductionPolicyParam;
+        if (context.parent.exploration.exploration_set_reduction_policy(
+            reductionPolicy, context.param)) {
+          context
+              .parent
+              .agent
+              .getPrinter()
+              .startNewLine()
+              .print("Set " + reductionPolicy + " reduction policy to " + context.param);
+        } else {
+          context
+              .parent
+              .agent
+              .getPrinter()
+              .startNewLine()
+              .print(
+                  "Illegal value for " + reductionPolicy + " reduction policy: " + context.param);
+        }
+      }
+
+      @Override
+      public boolean execute(IndifferentSelection context) {
+        var handled = false;
+
+        final String reductionPolicy = context.reductionPolicyParam;
+        if (reductionPolicy != null) {
+          if (context.parent.exploration.exploration_valid_parameter(reductionPolicy)) {
+            // decide indifferent-selection --reduction-policy
+            if (context.param == null) {
+              printValue(context);
+            } else {
+              // decide indifferent-selection --reduction-policy <value>>
+              setValue(context);
+            }
+          } else {
+            context
+                .parent
+                .agent
+                .getPrinter()
+                .startNewLine()
+                .print("Unknown " + "parameter name: " + reductionPolicy);
+          }
+
+          handled = true;
+        }
+
+        return handled;
+      }
+    }
+
+    private static class SetExplorationPolicy implements Action<IndifferentSelection> {
+
+      @Override
+      public boolean execute(IndifferentSelection context) {
+        var handled = false;
+
+        if (context.policy != null) {
+          // decide indifferent-selection --<policyName>
+          String policyName = context.policy.getName();
+
+          if (context.parent.exploration.exploration_set_policy(policyName)) {
+            context
+                .parent
+                .agent
+                .getPrinter()
+                .startNewLine()
+                .print("Set decide indifferent-selection policy to " + policyName);
+          } else {
+            context
+                .parent
+                .agent
+                .getPrinter()
+                .startNewLine()
+                .print("Failed to set decide indifferent-selection policy to " + policyName);
+          }
+
+          handled = true;
+        }
+
+        return handled;
       }
     }
   }
@@ -452,6 +648,7 @@ public class DecideCommand extends PicocliSoarCommand {
               + "values given to an operator are combined into a single value for use in random selection",
       subcommands = {HelpCommand.class})
   public static class NumericIndifferentMode implements Runnable {
+
     @ParentCommand Decide parent; // injected by picocli
 
     @Option(
@@ -518,6 +715,7 @@ public class DecideCommand extends PicocliSoarCommand {
               + "which operator will be chosen during the next decision phase",
       subcommands = {HelpCommand.class})
   public static class Predict implements Runnable {
+
     @ParentCommand Decide parent; // injected by picocli
 
     @Override
@@ -533,6 +731,7 @@ public class DecideCommand extends PicocliSoarCommand {
               + "is supplied as an argument during the next decision phase",
       subcommands = {HelpCommand.class})
   public static class Select implements Runnable {
+
     @ParentCommand Decide parent; // injected by picocli
 
     @Parameters(index = "0", arity = "0..1", description = "The operator's identifier")
@@ -542,12 +741,12 @@ public class DecideCommand extends PicocliSoarCommand {
     public void run() {
       // decide select
       if (operatorID == null) {
-        String my_selection = parent.decisionManipulation.select_get_operator();
-        if (my_selection == null) {
-          parent.agent.getPrinter().startNewLine().print("No operator selected.");
-        } else {
-          parent.agent.getPrinter().startNewLine().print(my_selection);
-        }
+        String mySelection = parent.decisionManipulation.select_get_operator();
+        parent
+            .agent
+            .getPrinter()
+            .startNewLine()
+            .print(Objects.requireNonNullElse(mySelection, "No operator selected."));
       }
       // decide select <identifier>
       else {
@@ -567,6 +766,7 @@ public class DecideCommand extends PicocliSoarCommand {
       description = "Seeds the random number generator with the passed seed",
       subcommands = {HelpCommand.class})
   public static class SetRandomSeed implements Runnable {
+
     @ParentCommand Decide parent; // injected by picocli
 
     @Parameters(
