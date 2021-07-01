@@ -93,17 +93,16 @@ public class PrintPreferencesCommand {
           }
         }
       }
-
-      if (id.goalInfo != null && id.goalInfo.getImpasseWmes() != null) {
+      if (id.goalInfo != null && !id.goalInfo.getImpasseWmes().isEmpty()) {
         printer.print("Arch-created wmes for %s :\n", id);
-        for (WmeImpl w = id.goalInfo.getImpasseWmes(); w != null; w = w.next) {
+        for (WmeImpl w : id.goalInfo.getImpasseWmes()) {
           printer.print("%s", w);
         }
       }
 
-      if (id.getInputWmes() != null) {
+      if (!id.getInputWmes().isEmpty()) {
         printer.print("Input (IO) wmes for %s :\n", id);
-        for (WmeImpl w = id.getInputWmes(); w != null; w = w.next) {
+        for (WmeImpl w : id.getInputWmes()) {
           printer.print("%s", w);
         }
       }
@@ -111,9 +110,6 @@ public class PrintPreferencesCommand {
       return;
     } else if (!id.isGoal() && attr == null) {
       // find wme(s?) whose value is <ID> and print prefs if they exist
-      // ??? should write print_prefs_for_id(soarAgent, id, print_prod,
-      // wtt);
-      // return;
       for (Wme w : agent.getAllWmesInRete()) {
         if (w.getValue() == id) {
           if (w.getValue() == predefinedSyms.operator_symbol) {
@@ -173,7 +169,7 @@ public class PrintPreferencesCommand {
         // see exploration_choose_according_to_policy
         // see exploration_compute_value_of_candidate
         // see exploration_probabilistically_select
-        int count = 0;
+        var count = 0;
         double total_probability = 0;
         final var exploration = Adaptables.adapt(agent, Exploration.class);
         // add up positive numeric values, count candidates
@@ -234,7 +230,7 @@ public class PrintPreferencesCommand {
       printer.print("(%.1f%%)", selection_probability * 100.0);
     }
     printer.print("\n");
-    if (printProduction) {
+    if (print_prod) {
       printer.print("    From ");
       pref.inst.trace(printer.asFormatter(), wmeTraceType);
       printer.print("\n");

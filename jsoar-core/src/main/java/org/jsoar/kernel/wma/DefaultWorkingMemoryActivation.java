@@ -15,7 +15,6 @@ import java.util.TreeMap;
 import org.jsoar.kernel.Decider;
 import org.jsoar.kernel.DecisionCycle;
 import org.jsoar.kernel.lhs.Condition;
-import org.jsoar.kernel.lhs.PositiveCondition;
 import org.jsoar.kernel.memory.Preference;
 import org.jsoar.kernel.memory.PreferenceType;
 import org.jsoar.kernel.memory.RecognitionMemory;
@@ -34,8 +33,6 @@ import org.jsoar.kernel.wma.DefaultWorkingMemoryActivationParams.ForgettingChoic
 import org.jsoar.kernel.wma.DefaultWorkingMemoryActivationParams.PetrovApproxChoices;
 import org.jsoar.util.adaptables.Adaptable;
 import org.jsoar.util.adaptables.Adaptables;
-import org.jsoar.util.properties.PropertyChangeEvent;
-import org.jsoar.util.properties.PropertyListener;
 import org.jsoar.util.properties.PropertyManager;
 
 //////////////////////////////////////////////////////////
@@ -105,7 +102,7 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
   /** If below decay thresh, but not forgotten, forget_cycle = */
   private static final long WMA_FORGOTTEN_CYCLE = 0;
 
-  private Adaptable context;
+  private final Adaptable context;
   private Trace trace;
   private DecisionCycle decisionCycle;
   private RecognitionMemory recMemory;
@@ -122,11 +119,11 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
       wma_forget_pq; // using TreeMap because this needs to be sorted and we will use
   // TreeMap-specific methods
   private Set<Long> wma_touched_sets;
-  private Map<Wme, wma_decay_element> wmaDecayElements = new HashMap<Wme, wma_decay_element>();
+  private final Map<Wme, wma_decay_element> wmaDecayElements = new HashMap<>();
 
   private int wma_power_size;
-  private double wma_power_array[];
-  private long wma_approx_array[];
+  private double[] wma_power_array;
+  private long[] wma_approx_array;
   private double wma_thresh_exp;
   private boolean wma_initialized;
   // private Marker wma_tc_counter; //this only used in one function, eliminated in favor of a local
@@ -182,22 +179,19 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
     stats = new DefaultWorkingMemoryActivationStats(properties);
     timers = new DefaultWorkingMemoryActivationTimers(properties);
 
-    wma_forget_pq = new TreeMap<Long, Set<wma_decay_element>>();
-    wma_touched_elements = new HashSet<Wme>();
-    wma_touched_sets = new HashSet<Long>();
+    wma_forget_pq = new TreeMap<>();
+    wma_touched_elements = new HashSet<>();
+    wma_touched_sets = new HashSet<>();
 
     // call wma_init/wma_deinit when wma is turned on/off
     properties.addListener(
         DefaultWorkingMemoryActivationParams.ACTIVATION,
-        new PropertyListener<ActivationChoices>() {
-          @Override
-          public void propertyChanged(PropertyChangeEvent<ActivationChoices> event) {
-            if (event.getNewValue() != event.getOldValue()) {
-              if (event.getNewValue() == ActivationChoices.on) {
-                wma_init();
-              } else {
-                wma_deinit();
-              }
+        event -> {
+          if (event.getNewValue() != event.getOldValue()) {
+            if (event.getNewValue() == ActivationChoices.on) {
+              wma_init();
+            } else {
+              wma_deinit();
             }
           }
         });
@@ -251,15 +245,14 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
         // MB * 1024 bytes/KB * 1024 KB/MB
         final double cache_bound = ((max_pow_cache * 1024 * 1024) / (/*sizeof( double )*/ 8));
 
-        wma_power_size =
-            (int) (Math.ceil((cache_full > cache_bound) ? (cache_bound) : (cache_full)));
+        wma_power_size = (int) (Math.ceil(Math.min(cache_full, cache_bound)));
       }
 
       wma_power_array = new double[wma_power_size];
 
       wma_power_array[0] = 0.0;
-      for (int i = 1; i < wma_power_size; i++) {
-        wma_power_array[i] = Math.pow((double) (i), decay_rate);
+      for (var i = 1; i < wma_power_size; i++) {
+        wma_power_array[i] = Math.pow(i, decay_rate);
       }
     }
 
@@ -272,9 +265,9 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
       wma_approx_array = new long[WMA_REFERENCES_PER_DECISION];
 
       wma_approx_array[0] = 0;
-      for (int i = 1; i < WMA_REFERENCES_PER_DECISION; i++) {
+      for (var i = 1; i < WMA_REFERENCES_PER_DECISION; i++) {
         wma_approx_array[i] =
-            (long) (Math.ceil(Math.exp((decay_thresh - Math.log((double) (i))) / decay_rate)));
+            (long) (Math.ceil(Math.exp((decay_thresh - Math.log(i)) / decay_rate)));
       }
     }
 
@@ -334,7 +327,7 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
   private boolean wma_should_have_decay_element(final Wme w) {
     final Iterator<Preference> it = w.getPreferences();
     if (!it.hasNext()) return false;
-    Preference preference = it.next();
+    var preference = it.next();
     return ((preference.reference_count != 0) && (preference.o_supported));
   }
 
@@ -349,7 +342,7 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
 
   /** wma.cpp:333:wma_sum_history */
   private double wma_sum_history(final wma_history history, final long current_cycle) {
-    double return_val = 0.0;
+    var return_val = 0.0;
 
     int p = history.next_p;
     int counter = history.history_ct;
@@ -369,22 +362,20 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
     }
 
     // see (Petrov, 2006)
-    if (params.petrov_approx.get() == PetrovApproxChoices.on) {
-      // if ( n > k )
-      if (history.total_references > history.history_references) {
-        // ( n - k ) * ( tn^(1-d) - tk^(1-d) )
-        // -----------------------------------
-        // ( 1 - d ) * ( tn - tk )
+    if ((params.petrov_approx.get() == PetrovApproxChoices.on)
+        && (history.total_references > history.history_references)) {
+      // ( n - k ) * ( tn^(1-d) - tk^(1-d) )
+      // -----------------------------------
+      // ( 1 - d ) * ( tn - tk )
 
-        // decay_rate is negated (for nice printing)
-        double d_inv = (1 + params.decay_rate.get());
+      // decay_rate is negated (for nice printing)
+      double d_inv = (1 + params.decay_rate.get());
 
-        return_val +=
-            (((history.total_references - history.history_references)
-                    * (Math.pow((double) (current_cycle - history.first_reference), d_inv)
-                        - Math.pow((double) (cycle_diff), d_inv)))
-                / (d_inv * ((current_cycle - history.first_reference) - cycle_diff)));
-      }
+      return_val +=
+          (((history.total_references - history.history_references)
+                  * (Math.pow((double) (current_cycle - history.first_reference), d_inv)
+                      - Math.pow((double) (cycle_diff), d_inv)))
+              / (d_inv * ((current_cycle - history.first_reference) - cycle_diff)));
     }
 
     return return_val;
@@ -417,20 +408,19 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
     long return_val = 0;
 
     // this is a replacement for putting wma_tc_number on every wme
-    final Set<Wme> alreadyProcessed = new HashSet<Wme>();
+    final Set<Wme> alreadyProcessed = new HashSet<>();
 
     long num_cond_wmes = 0;
-    double combined_time_sum = 0.0;
+    var combined_time_sum = 0.0;
 
-    for (Preference pref =
-            w.getPreferences().next().slot.getPreferencesByType(PreferenceType.ACCEPTABLE);
+    for (var pref = w.getPreferences().next().slot.getPreferencesByType(PreferenceType.ACCEPTABLE);
         pref != null;
         pref = pref.next) {
       if ((pref.value == w.getValue()) && (pref.o_supported)) {
         for (Condition cond = pref.inst.top_of_instantiated_conditions;
             cond != null;
             cond = cond.next) {
-          PositiveCondition pc = cond.asPositiveCondition();
+          var pc = cond.asPositiveCondition();
           if ((pc != null) && (!alreadyProcessed.contains(pc.bt().wme_))) {
             Wme cond_wme = pc.bt().wme_;
             alreadyProcessed.add(cond_wme);
@@ -507,7 +497,7 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
         temp_el.touches.history_ct = 0;
         temp_el.touches.next_p = 0;
 
-        for (int i = 0; i < wma_history.WMA_DECAY_HISTORY; i++) {
+        for (var i = 0; i < wma_history.WMA_DECAY_HISTORY; i++) {
           temp_el.touches.access_history[i].d_cycle = 0;
           temp_el.touches.access_history[i].num_references = 0;
         }
@@ -558,14 +548,14 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
 
       // if doesn't have an o_set, populate
       if (my_o_set == null) {
-        my_o_set = new HashSet<Wme>();
+        my_o_set = new HashSet<>();
 
         w.getPreferences().next().wma_o_set = my_o_set;
 
         for (Condition c = w.getPreferences().next().inst.top_of_instantiated_conditions;
             c != null;
             c = c.next) {
-          PositiveCondition pc = c.asPositiveCondition();
+          var pc = c.asPositiveCondition();
           if (pc != null) {
             wma_activate_wme(pc.bt().wme_, 0, my_o_set);
           }
@@ -591,11 +581,8 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
       }
     }
     // architectural
-    else if (!o_only && !w.getPreferences().hasNext()) {
-      // only action is to add it to the o_set
-      if (o_set != null) {
-        o_set.add(w);
-      }
+    else if (!o_only && !w.getPreferences().hasNext() && (o_set != null)) {
+      o_set.add(w);
     }
   }
 
@@ -606,17 +593,15 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
    *     looks it up)
    */
   private void wma_deactivate_element(final Wme w, final wma_decay_element temp_el) {
-    if (temp_el != null) {
-      if (!temp_el.just_removed) {
-        wma_touched_elements.remove(w);
+    if ((temp_el != null) && (!temp_el.just_removed)) {
+      wma_touched_elements.remove(w);
 
-        if ((params.forgetting.get() == ForgettingChoices.approx)
-            || (params.forgetting.get() == ForgettingChoices.bsearch)) {
-          wma_forgetting_remove_from_p_queue(temp_el);
-        }
-
-        temp_el.just_removed = true;
+      if ((params.forgetting.get() == ForgettingChoices.approx)
+          || (params.forgetting.get() == ForgettingChoices.bsearch)) {
+        wma_forgetting_remove_from_p_queue(temp_el);
       }
+
+      temp_el.just_removed = true;
     }
   }
 
@@ -656,7 +641,7 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
 
       final Set<wma_decay_element> pq = wma_forget_pq.get(new_cycle);
       if (pq == null) {
-        Set<wma_decay_element> newbie = new HashSet<wma_decay_element>();
+        Set<wma_decay_element> newbie = new HashSet<>();
 
         newbie.add(decay_el);
 
@@ -672,13 +657,11 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
     if (decay_el != null) {
       // try to find set for the element per cycle
       final Set<wma_decay_element> pq = wma_forget_pq.get(decay_el.forget_cycle);
-      if (pq != null) {
-        if (pq.contains(decay_el)) {
-          pq.remove(decay_el);
+      if ((pq != null) && pq.contains(decay_el)) {
+        pq.remove(decay_el);
 
-          if (pq.isEmpty()) {
-            wma_touched_sets.add(decay_el.forget_cycle);
-          }
+        if (pq.isEmpty()) {
+          wma_touched_sets.add(decay_el.forget_cycle);
         }
       }
     }
@@ -741,7 +724,7 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
           //
 
           long upper_bound = to_add;
-          long lower_bound, mid;
+          long lower_bound;
           if (to_add < 4) {
             lower_bound = upper_bound;
           } else {
@@ -749,7 +732,7 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
           }
 
           while (lower_bound != upper_bound) {
-            mid = ((lower_bound + upper_bound) / 2);
+            long mid = ((lower_bound + upper_bound) / 2);
             act = wma_calculate_decay_activation(decay_el, (return_val + mid), false);
 
             if (act < my_thresh) {
@@ -779,21 +762,19 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
 
   /** wma.cpp:890:wma_forgetting_forget_wme */
   private boolean wma_forgetting_forget_wme(final Wme w) {
-    boolean return_val = false;
+    var return_val = false;
     final boolean fake = (params.fake_forgetting.get() == FakeForgettingChoices.on);
 
     if (w.getPreferences().hasNext() && w.getPreferences().next().slot != null) {
-      Preference p = w.getPreferences().next().slot.getAllPreferences();
+      var p = w.getPreferences().next().slot.getAllPreferences();
       Preference next_p;
 
       while (p != null) {
         next_p = p.nextOfSlot;
 
-        if (p.o_supported && p.isInTempMemory() && (p.value == w.getValue())) {
-          if (!fake) {
-            recMemory.remove_preference_from_tm(p);
-            return_val = true;
-          }
+        if (p.o_supported && p.isInTempMemory() && (p.value == w.getValue()) && !fake) {
+          recMemory.remove_preference_from_tm(p);
+          return_val = true;
         }
 
         p = next_p;
@@ -805,8 +786,8 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
 
   /** wma.cpp:920:wma_forgetting_update_p_queue */
   private boolean wma_forgetting_update_p_queue() {
-    boolean return_val = false;
-    boolean do_forget = false;
+    var return_val = false;
+    boolean do_forget;
 
     if (!wma_forget_pq.isEmpty()) {
       final long current_cycle = wma_d_cycle_count;
@@ -828,7 +809,7 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
                 for (Slot s = ((IdentifierImpl) current.this_wme.getIdentifier()).slots;
                     (s != null && do_forget);
                     s = s.next) {
-                  for (WmeImpl w = s.getWmes(); (w != null && do_forget); w = w.next) {
+                  for (WmeImpl w : s.getWmes()) {
                     final wma_decay_element wma_decay_el = wmaDecayElements.get(w);
                     if (w.preference.o_supported
                         && (wma_decay_el == null
@@ -843,9 +824,9 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
                 if (forget_only_lti) {
                   // implements all-or-nothing forget for lti mode
                   for (Slot s = ((IdentifierImpl) current.this_wme.getIdentifier()).slots;
-                      (s != null && do_forget);
+                      s != null;
                       s = s.next) {
-                    for (WmeImpl w = s.getWmes(); (w != null && do_forget); w = w.next) {
+                    for (WmeImpl w : s.getWmes()) {
                       if (wma_forgetting_forget_wme(w)) {
                         return_val = true;
                       }
@@ -887,7 +868,7 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
     long current_cycle = wma_d_cycle_count;
     double decay_thresh = wma_thresh_exp;
     final boolean forget_only_lti = (params.forget_wme.get() == ForgetWmeChoices.lti);
-    boolean return_val = false;
+    var return_val = false;
 
     for (Wme w : rete.getAllWmes()) {
       final wma_decay_element wma_decay_el = wmaDecayElements.get(w);
@@ -925,14 +906,11 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
   @Override
   public void wma_activate_wmes_in_pref(final Preference pref) {
     if (pref.type == PreferenceType.ACCEPTABLE) {
-      WmeImpl w = pref.slot.getWmes();
-      while (w != null) {
+      for (WmeImpl w : pref.slot.getWmes()) {
         // id and attr should already match so just compare the value
         if (w.getValue() == pref.value) {
           wma_activate_wme(w);
         }
-
-        w = w.next;
       }
     }
   }
@@ -1024,20 +1002,19 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
 
   @Override
   public String wma_get_wme_history(final Wme w) {
-    String ret = "";
+    var ret = new StringBuilder();
     final wma_decay_element wma_decay_el = wmaDecayElements.get(w);
     if (wma_decay_el != null) {
       final wma_history history = wma_decay_el.touches;
       final long current_cycle = wma_d_cycle_count;
 
-      ret +=
-          "history ("
-              + history.history_references
-              + "/"
-              + history.total_references
-              + ", first @ d"
-              + history.first_reference
-              + "):";
+      ret.append("history (")
+          .append(history.history_references)
+          .append("/")
+          .append(history.total_references)
+          .append(", first @ d")
+          .append(history.first_reference)
+          .append("):");
 
       int p = history.next_p;
       int counter = history.history_ct;
@@ -1045,19 +1022,23 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
         p = wma_history_prev(p);
         counter--;
 
-        ret += "\n" + history.access_history[p].toString(current_cycle);
+        ret.append("\n").append(history.access_history[p].toString(current_cycle));
       }
 
       final ForgettingChoices forget = params.forgetting.get();
 
       if ((forget == ForgettingChoices.bsearch) || (forget == ForgettingChoices.approx)) {
-        ret += "\n\n" + "considering WME for decay @ d" + wma_decay_el.forget_cycle;
+        ret.append("""
+
+
+            considering WME for decay @ d""")
+            .append(wma_decay_el.forget_cycle);
       }
     } else {
-      ret = "WME has no decay history";
+      ret = new StringBuilder("WME has no decay history");
     }
 
-    return ret;
+    return ret.toString();
   }
 
   /** wma.cpp:1308:wma_go */
@@ -1078,7 +1059,7 @@ public class DefaultWorkingMemoryActivation implements WorkingMemoryActivation {
       if (forgetting != ForgettingChoices.off) {
         timers.start(timers.forgetting);
 
-        boolean forgot_something = false;
+        boolean forgot_something;
 
         if (forgetting == ForgettingChoices.naive) {
           forgot_something = wma_forgetting_naive_sweep();

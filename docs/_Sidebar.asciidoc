@@ -1,0 +1,28 @@
+ifdef::env-github[:relfilesuffix: ]
+ifndef::env-github[:relfilesuffix: .asciidoc]
+
+*link:glossary{relfilesuffix}[Glossary]*
+
+'''
+
+* link:Context{relfilesuffix}[Context]
+* link:Functional-view{relfilesuffix}[Functional View]
+* link:Quality-attributes{relfilesuffix}[Quality Attributes]
+* link:Constraints{relfilesuffix}[Constraints]
+* link:Principles{relfilesuffix}[Principles]
+* link:Software-architecture{relfilesuffix}[Software Architecture]
+* link:External-interfaces{relfilesuffix}[External Interfaces]
+* link:Code{relfilesuffix}[Code]
+* link:Data{relfilesuffix}[Data]
+* link:Infrastructure-architecture{relfilesuffix}[Infrastructure Architecture]
+* link:Deployment{relfilesuffix}[Deployment]
+* link:Operation-and-Support{relfilesuffix}[Operation & Support]
+* link:decision-log/decision-log{relfilesuffix}[Architectural Decision Log]
+
+'''
+
+.*Presentations*
+[%collapsible]
+====
+* link:presentations/JSoar-SoarWorkshop-2009.ppt[(J)Soar workshop 2009]
+====

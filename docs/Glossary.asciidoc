@@ -1,0 +1,11 @@
+[glossary]
+== Glossary
+
+[[LTI]]
+LTI:: Long Term Identifier
+
+[[TC]]
+TC:: Transitive Closure
+
+[[WME]]
+WME:: Working Memory Element
