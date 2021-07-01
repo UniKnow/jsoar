@@ -82,7 +82,7 @@ public class PrintPreferencesCommand {
         }
 
         for (PreferenceType pt : PreferenceType.values()) {
-          Preference preference = s.getPreferencesByType(pt);
+          var preference = s.getPreferencesByType(pt);
           if (preference != null) {
             if (s.isa_context_slot) {
               printer.print("\n%ss:\n", pt.getDisplayName());
@@ -230,7 +230,7 @@ public class PrintPreferencesCommand {
       printer.print("(%.1f%%)", selection_probability * 100.0);
     }
     printer.print("\n");
-    if (print_prod) {
+    if (printProduction) {
       printer.print("    From ");
       pref.inst.trace(printer.asFormatter(), wmeTraceType);
       printer.print("\n");
