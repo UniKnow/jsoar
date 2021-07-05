@@ -7,7 +7,6 @@ package org.jsoar.kernel.memory;
 
 import com.google.common.collect.Iterators;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -183,7 +182,7 @@ public class Slot {
   /** @return the head of the list of WMEs in this slot */
   @NonNull
   public List<WmeImpl> getWmes() {
-    return Collections.unmodifiableList(new ArrayList<>(this.wmes));
+    return List.copyOf(this.wmes);
   }
 
   /**
@@ -220,7 +219,7 @@ public class Slot {
   }
 
   public List<WmeImpl> getAcceptablePreferenceWmes() {
-    return Collections.unmodifiableList(new ArrayList<>(acceptablePreferenceWMEs));
+    return List.copyOf(acceptablePreferenceWMEs);
   }
 
   public void addAcceptablePreferenceWme(WmeImpl wme) {
@@ -393,7 +392,7 @@ public class Slot {
     add_to_CDPS(context, pref, true);
   }
 
-  public void add_to_CDPS(Adaptable context, Preference pref, boolean unique_value /* = true */) {
+  public void add_to_CDPS(Adaptable context, Preference pref, boolean unique_value) {
     final var trace = Adaptables.adapt(context, Trace.class);
     final var printer = trace.getPrinter();
     final boolean traceBacktracing = trace.isEnabled(Category.BACKTRACING);
@@ -406,21 +405,17 @@ public class Slot {
     }
 
     var already_exists = false;
-    for (Preference p : cdps) {
+    for (Iterator<Preference> iterator = cdps.iterator(); iterator.hasNext() && !already_exists; ) {
+      Preference p = iterator.next();
+
       if (p == pref) {
         already_exists = true;
-        break;
       }
 
       if (unique_value) {
         /*
          * Checking if a preference is unique differs depending on the
          * preference type
-         */
-
-        /*
-         * Binary preferences can be considered equivalent if they point
-         * to the same operators in the correct relative spots
          */
         if (((pref.type == PreferenceType.BETTER) || (pref.type == PreferenceType.WORSE))
             && ((p.type == PreferenceType.BETTER) || (p.type == PreferenceType.WORSE))) {
@@ -431,6 +426,10 @@ public class Slot {
           }
         } else if ((pref.type == PreferenceType.BINARY_INDIFFERENT)
             && (p.type == PreferenceType.BINARY_INDIFFERENT)) {
+          /*
+           * Binary preferences can be considered equivalent if they point
+           * to the same operators in the correct relative spots
+           */
           already_exists =
               (((pref.value == p.value) && (pref.referent == p.referent))
                   || ((pref.value == p.referent) && (pref.referent == p.value)));
@@ -441,11 +440,9 @@ public class Slot {
            */
           already_exists = (pref.value == p.value) && (pref.type == p.type);
         }
-        if (already_exists) {
-          break;
-        }
       }
     }
+
     if (!already_exists) {
       this.cdps.push(pref);
       pref.preference_add_ref();
