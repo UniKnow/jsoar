@@ -1,6 +1,12 @@
 [glossary]
 == Glossary
 
+[[CDPS]]
+CDPS:: Context Dependent Preference Set
+
+[[DLL]]
+DLL:: Double Linked List
+
 [[LTI]]
 LTI:: Long Term Identifier
 
