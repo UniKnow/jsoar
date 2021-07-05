@@ -28,70 +28,80 @@ import org.jsoar.util.adaptables.Adaptables;
 /**
  * WARNING: This is an internal interface. Don't use it unless you know what you're doing.
  *
- * <p>Fields in a slot:
- *
- * <p>* `next`, `prev`: used for a doubly-linked list of all slots for a certain identifier. * `id`,
- * `attr`: identifier and attribute of the slot * `wmes`: header of a doubly-linked list of all wmes
- * in the slot * `acceptable_preference_wmes`: header of doubly-linked list of all acceptable
- * preference wmes in the slot. (This is only used for context slots.) * `all_preferences`: header
- * of a doubly-linked list of all preferences currently in the slot *
- * `preferences[NUM_PREFERENCE_TYPES]`: array of headers of doubly-linked lists, one for each
- * possible type of preference. These store all the preferences, sorted into lists according to
- * their types. Within each list, the preferences are sorted according to their match goal, with the
- * pref. supported by the highest goal at the head of the list. * `CDPS`: a dll of preferences in
- * the context-dependent preference set, which is the set of all preferences that contributed to an
- * operator's selection. This is used to allow Soar to backtrace through evaluation rules in
- * substates. The rules that determine which preferences are in the CPSD are outlined in
- * run_preference_semantics(). * `impasse_id`: points to the identifier of the attribute impasse
- * object for this slot. (NIL if the slot isn't impassed.) * `isa_context_slot`: TRUE if this is a
- * context slot * `impasse_type`: indicates the type of the impasse for this slot. This is one of
- * NONE_IMPASSE_TYPE, CONSTRAINT_FAILURE_IMPASSE_TYPE, etc. * `marked_for_possible_removal`: TRUE if
- * this slot is on the list of slots that might be deallocated at the end of the current top-level
- * phases. * `changed`: indicates whether the preferences for this slot have changed. For
- * non-context slots, this is either NIL or a pointer to the corresponding dl_cons in changed_slots
- * (see decide.c); for context slots, it's just a zero/nonzero flag. *
- * `acceptable_preference_changed`: for context slots only; this is zero if no acceptable or require
- * preference in this slot has changed; if one has changed, it points to a dl_cons.
- *
- * <p>`gdatastructs.h:288`
- *
  * @author ray
  */
 public class Slot {
 
+  /*
+   * used for a doubly-linked list of all slots for a certain identifier
+   */
   public Slot next;
-  public Slot prev; // dll of slots for id
+  public Slot prev;
 
+  /** Identifier of slot */
   @NonNull public final IdentifierImpl id;
 
+  /** Attributes of slot */
   @Getter public final SymbolImpl attr;
 
   private final List<WmeImpl> wmes = new ArrayList<>(); // dll of wmes in the slot
 
-  private final List<WmeImpl> acceptablePreferenceWMEs =
-      new ArrayList<>(); // dll of acceptable pref. wmes
+  /*
+   * List of all acceptable preference wmes in the slot. (This is only used for context slots.)
+   */
+  private final List<WmeImpl> acceptablePreferenceWMEs = new ArrayList<>();
 
+  /** header of a doubly-linked list of all preferences currently in the slot */
   private Preference all_preferences; // dll of all pref's in the slot
 
+  /**
+   * These store all the preferences, sorted into lists according to their types. Within each list,
+   * the preferences are sorted according to their match goal, with the pref. supported by the
+   * highest goal at the head of the list.
+   */
   private EnumMap<PreferenceType, Preference> preferencesByType;
 
-  private LinkedList<Preference> cdps; /* list of prefs in the CDPS to backtrace through */
+  /**
+   * A list of preferences in the context-dependent preference set, which is the set of all
+   * preferences that contributed to an operator's selection. This is used to allow Soar to
+   * backtrace through evaluation rules in substates. The rules that determine which preferences are
+   * in the CPSD are outlined in run_preference_semantics().
+   */
+  private final LinkedList<Preference> cdps = new LinkedList<>();
 
-  public IdentifierImpl impasse_id = null; // null if slot is not impassed
+  /**
+   * Points to the identifier of the attribute impasse object for this slot. (Null if slot is not
+   * impassed.)
+   */
+  public IdentifierImpl impasse_id = null;
+
+  /** TRUE if this is a context slot */
   public final boolean isa_context_slot;
+
+  /**
+   * indicates the type of the impasse for this slot. This is one of NONE_IMPASSE_TYPE,
+   * CONSTRAINT_FAILURE_IMPASSE_TYPE, etc.
+   */
   public ImpasseType impasse_type = ImpasseType.NONE;
+
+  /**
+   * TRUE if this slot is on the list of slots that might be deallocated at the end of the current
+   * top-level phases.
+   */
   public boolean marked_for_possible_removal = false;
 
   /**
-   * for non-context slots: points to the corresponding dl_cons in changed_slots; for context slots:
-   * just zero/nonzero flag indicating slot changed
+   * Indicates whether the preferences for this slot have changed. For non-context slots, this is
+   * either Null or a pointer to the corresponding dl_cons in changed_slots; for context slots, it's
+   * just a zero/nonzero flag.
    *
    * <p>TODO Sub-class instead of using this for two things
    */
   public Object changed;
 
   /**
-   * for context slots: either zero, or points to dl_cons if the slot has changed + or ! pref's
+   * For context slots only; this is zero if no acceptable or require preference in this slot has
+   * changed; if one has changed, it points to a dl_cons.
    *
    * <p>TODO Sub-class instead of using this for two things
    */
@@ -372,7 +382,7 @@ public class Slot {
   }
 
   public boolean hasContextDependentPreferenceSet() {
-    return this.cdps != null && !this.cdps.isEmpty();
+    return !this.cdps.isEmpty();
   }
 
   LinkedList<Preference> getContextDependentPreferenceSet() {
@@ -395,13 +405,10 @@ public class Slot {
   public void add_to_CDPS(Adaptable context, Preference pref, boolean unique_value) {
     final var trace = Adaptables.adapt(context, Trace.class);
     final var printer = trace.getPrinter();
+
     final boolean traceBacktracing = trace.isEnabled(Category.BACKTRACING);
     if (traceBacktracing) {
       printer.print("--> Adding preference to CDPS: %s", pref);
-    }
-
-    if (this.cdps == null) {
-      this.cdps = new LinkedList<>();
     }
 
     var already_exists = false;
