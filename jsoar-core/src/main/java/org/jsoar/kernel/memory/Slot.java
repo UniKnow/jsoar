@@ -402,59 +402,74 @@ public class Slot {
     add_to_CDPS(context, pref, true);
   }
 
-  public void add_to_CDPS(Adaptable context, Preference pref, boolean unique_value) {
+  public void add_to_CDPS(Adaptable context, Preference newPreference, boolean unique_value) {
     final var trace = Adaptables.adapt(context, Trace.class);
     final var printer = trace.getPrinter();
 
     final boolean traceBacktracing = trace.isEnabled(Category.BACKTRACING);
     if (traceBacktracing) {
-      printer.print("--> Adding preference to CDPS: %s", pref);
+      printer.print("--> Adding preference to CDPS: %s", newPreference);
     }
 
     var already_exists = false;
     for (Iterator<Preference> iterator = cdps.iterator(); iterator.hasNext() && !already_exists; ) {
-      Preference p = iterator.next();
+      var existingPreference = iterator.next();
 
-      if (p == pref) {
+      if (existingPreference == newPreference) {
         already_exists = true;
       }
 
       if (unique_value) {
-        /*
-         * Checking if a preference is unique differs depending on the
-         * preference type
-         */
-        if (((pref.type == PreferenceType.BETTER) || (pref.type == PreferenceType.WORSE))
-            && ((p.type == PreferenceType.BETTER) || (p.type == PreferenceType.WORSE))) {
-          if (pref.type == p.type) {
-            already_exists = ((pref.value == p.value) && (pref.referent == p.referent));
-          } else {
-            already_exists = ((pref.value == p.referent) && (pref.referent == p.value));
-          }
-        } else if ((pref.type == PreferenceType.BINARY_INDIFFERENT)
-            && (p.type == PreferenceType.BINARY_INDIFFERENT)) {
-          /*
-           * Binary preferences can be considered equivalent if they point
-           * to the same operators in the correct relative spots
-           */
-          already_exists =
-              (((pref.value == p.value) && (pref.referent == p.referent))
-                  || ((pref.value == p.referent) && (pref.referent == p.value)));
-        } else {
-          /*
-           * Otherwise they are equivalent if they have the same value
-           * and type
-           */
-          already_exists = (pref.value == p.value) && (pref.type == p.type);
-        }
+        already_exists = isUnique(existingPreference, newPreference);
       }
     }
 
     if (!already_exists) {
-      this.cdps.push(pref);
-      pref.preference_add_ref();
+      this.cdps.push(newPreference);
+      newPreference.preference_add_ref();
     } else if (traceBacktracing) {
       printer.print("--> equivalent pref already exists. Not adding.\n");
     }
+  }
+
+  private boolean isUnique(Preference existingPreference, Preference newPreference) {
+    boolean alreadyExists;
+
+    /*
+     * Checking if a preference is unique differs depending on the preference type
+     */
+    if (((existingPreference.type == PreferenceType.BETTER)
+            || (existingPreference.type == PreferenceType.WORSE))
+        && ((newPreference.type == PreferenceType.BETTER)
+            || (newPreference.type == PreferenceType.WORSE))) {
+      if (existingPreference.type == newPreference.type) {
+        alreadyExists =
+            ((existingPreference.value == newPreference.value)
+                && (existingPreference.referent == newPreference.referent));
+      } else {
+        alreadyExists =
+            ((existingPreference.value == newPreference.referent)
+                && (existingPreference.referent == newPreference.value));
+      }
+    } else if ((existingPreference.type == PreferenceType.BINARY_INDIFFERENT)
+        && (newPreference.type == PreferenceType.BINARY_INDIFFERENT)) {
+      /*
+       * Binary preferences can be considered equivalent if they point to the same operators in the correct relative spots
+       */
+      alreadyExists =
+          (((existingPreference.value == newPreference.value)
+                  && (existingPreference.referent == newPreference.referent))
+              || ((existingPreference.value == newPreference.referent)
+                  && (existingPreference.referent == newPreference.value)));
+    } else {
+      /*
+       * Otherwise they are equivalent if they have the same value and type
+       */
+      alreadyExists =
+          (existingPreference.value == newPreference.value)
+              && (existingPreference.type == newPreference.type);
+    }
+
+    return alreadyExists;
   }
 }
