@@ -69,7 +69,7 @@ public class Consistency {
           "    slot (s)  isa context slot: " + "    Slot IdentifierImpl [%s] and attribute [%s]\n",
           s.id, s.attr);
     }
-    printDebugMessage("    s->impasse_type: %s\n", s.impasse_type);
+    printDebugMessage("    s->impasse_type: %s\n", s.getImpasseType());
     if (s.impasse_id != null) {
       printDebugMessage("    Impasse ID is set (non-NIL)\n");
     }

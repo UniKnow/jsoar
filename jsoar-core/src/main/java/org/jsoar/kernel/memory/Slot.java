@@ -82,7 +82,7 @@ public class Slot {
    * indicates the type of the impasse for this slot. This is one of NONE_IMPASSE_TYPE,
    * CONSTRAINT_FAILURE_IMPASSE_TYPE, etc.
    */
-  public ImpasseType impasse_type = ImpasseType.NONE;
+  @Getter private ImpasseType impasseType = ImpasseType.NONE;
 
   /**
    * TRUE if this slot is on the list of slots that might be deallocated at the end of the current
