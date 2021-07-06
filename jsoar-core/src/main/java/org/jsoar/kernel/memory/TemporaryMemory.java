@@ -41,8 +41,11 @@ public class TemporaryMemory {
   /** agent.h:602:changed_slots */
   public final ListHead<Slot> changed_slots = ListHead.newInstance();
 
-  /** agent.h:605:slots_for_possible_removal */
-  private final LinkedList<Slot> slots_for_possible_removal = new LinkedList<>();
+  /**
+   * Contains the slots which are marked for possible removal at the end of the current top-level
+   * phases
+   */
+  private final LinkedList<Slot> slotsForPossibleRemoval = new LinkedList<>();
 
   /**
    * Mark_slot_as_changed() is called by the preference manager whenever the preferences for a slot
@@ -53,11 +56,8 @@ public class TemporaryMemory {
    */
   public void mark_slot_as_changed(Slot s) {
     if (s.isContextSlot()) {
-      if (this.highest_goal_whose_context_changed != null) {
-        if (s.id.getLevel() < this.highest_goal_whose_context_changed.getLevel()) {
-          this.highest_goal_whose_context_changed = s.id;
-        }
-      } else {
+      if ((this.highest_goal_whose_context_changed == null)
+          || (s.id.getLevel() < this.highest_goal_whose_context_changed.getLevel())) {
         this.highest_goal_whose_context_changed = s.id;
       }
       s.changed = s; // just make it nonzero
@@ -80,14 +80,14 @@ public class TemporaryMemory {
       return;
     }
     s.marked_for_possible_removal = true;
-    slots_for_possible_removal.push(s);
+    slotsForPossibleRemoval.push(s);
   }
 
   /** tempmem.cpp:159:remove_garbage_slots */
   @SuppressWarnings("unchecked")
   public void remove_garbage_slots(final Adaptable context) {
-    while (!slots_for_possible_removal.isEmpty()) {
-      final var s = slots_for_possible_removal.pop();
+    while (!slotsForPossibleRemoval.isEmpty()) {
+      final var s = slotsForPossibleRemoval.pop();
 
       if (!s.getWmes().isEmpty() || s.getAllPreferences() != null) {
         // don't deallocate it if it still has any wmes or preferences
