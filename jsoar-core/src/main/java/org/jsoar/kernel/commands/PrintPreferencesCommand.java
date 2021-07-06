@@ -84,7 +84,7 @@ public class PrintPreferencesCommand {
         for (PreferenceType pt : PreferenceType.values()) {
           var preference = s.getPreferencesByType(pt);
           if (preference != null) {
-            if (s.isa_context_slot) {
+            if (s.isContextSlot()) {
               printer.print("\n%ss:\n", pt.getDisplayName());
             }
             for (var p = preference; p != null; p = p.next) {

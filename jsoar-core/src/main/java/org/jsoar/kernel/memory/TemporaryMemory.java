@@ -52,7 +52,7 @@ public class TemporaryMemory {
    * <p>tempmem.cpp:116:mark_slot_as_changed
    */
   public void mark_slot_as_changed(Slot s) {
-    if (s.isa_context_slot) {
+    if (s.isContextSlot()) {
       if (this.highest_goal_whose_context_changed != null) {
         if (s.id.getLevel() < this.highest_goal_whose_context_changed.getLevel()) {
           this.highest_goal_whose_context_changed = s.id;
@@ -106,7 +106,7 @@ public class TemporaryMemory {
         s.clear_CDPS(context);
       }
 
-      if (s.changed != null && !s.isa_context_slot) {
+      if (s.changed != null && !s.isContextSlot()) {
         final ListItem<Slot> changed = (ListItem<Slot>) s.changed;
         changed.remove(changed_slots);
       }

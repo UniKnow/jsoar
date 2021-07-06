@@ -76,7 +76,7 @@ public class Slot {
   public IdentifierImpl impasse_id = null;
 
   /** TRUE if this is a context slot */
-  public final boolean isa_context_slot;
+  @Getter private final boolean contextSlot;
 
   /**
    * indicates the type of the impasse for this slot. This is one of NONE_IMPASSE_TYPE,
@@ -148,7 +148,7 @@ public class Slot {
      * Context slots are goals and operators; operator slots get created
      * with a goal (see create_new_context).
      */
-    this.isa_context_slot = (id.isGoal()) && (attr == operator_symbol);
+    this.contextSlot = (id.isGoal()) && (attr == operator_symbol);
 
     this.id = id;
     this.attr = attr;

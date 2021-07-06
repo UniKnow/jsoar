@@ -64,7 +64,7 @@ public class Consistency {
    */
   private boolean decisionConsistentWithCurrentPreferences(IdentifierImpl goal, Slot s) {
 
-    if (s.isa_context_slot) {
+    if (s.isContextSlot()) {
       printDebugMessage(
           "    slot (s)  isa context slot: " + "    Slot IdentifierImpl [%s] and attribute [%s]\n",
           s.id, s.attr);

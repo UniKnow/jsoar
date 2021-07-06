@@ -907,7 +907,7 @@ public class Decider {
      * - when the learning system parameter is set off (note, this is independent of whether learning is on) */
 
     boolean do_CDPS =
-        (s.isa_context_slot
+        (s.isContextSlot()
             && !consistency
             && (s.id.getLevel() > SoarConstants.TOP_GOAL_LEVEL)
             && chunker.chunkThroughEvaluationRules);
@@ -920,7 +920,7 @@ public class Decider {
 
     // if the slot has no preferences at all, things are trivial
     if (s.getAllPreferences() == null) {
-      if (!s.isa_context_slot) {
+      if (!s.isContextSlot()) {
         tempMemory.mark_slot_for_possible_removal(s);
       }
       result_candidates.value = null;
@@ -929,7 +929,7 @@ public class Decider {
 
     // If this is the true decision slot and selection has been made, attempt force selection
 
-    if ((!s.isa_context_slot && !consistency) && (decisionManip.select_get_operator() != null)) {
+    if ((!s.isContextSlot() && !consistency) && (decisionManip.select_get_operator() != null)) {
       final Preference force_result =
           decisionManip.select_force(s.getPreferencesByType(PreferenceType.ACCEPTABLE), !predict);
 
@@ -955,7 +955,7 @@ public class Decider {
     final var printer = trace.getPrinter();
     final boolean traceBacktracing = trace.isEnabled(Category.BACKTRACING);
 
-    if (traceBacktracing && s.isa_context_slot) {
+    if (traceBacktracing && s.isContextSlot()) {
 
       printer.print(
           "\n-------------------------------\nRUNNING PREFERENCE SEMANTICS...\n-------------------------------\n");
@@ -1063,7 +1063,7 @@ public class Decider {
     }
 
     /* If this is not a decidable context slot, then we're done */
-    if (!s.isa_context_slot) {
+    if (!s.isContextSlot()) {
       result_candidates.value = candidates;
       return ImpasseType.NONE;
     }
@@ -3051,7 +3051,7 @@ public class Decider {
       // Tell those slots they are changed so that the impasses can be regenerated
       // bug 1011
       for (Slot s = tempMemory.highest_goal_whose_context_changed.slots; s != null; s = s.next) {
-        if (s.isa_context_slot && s.changed == null) {
+        if (s.isContextSlot() && s.changed == null) {
           s.changed = s; // use non-zero value to indicate change, see definition of slot::changed
         }
       }

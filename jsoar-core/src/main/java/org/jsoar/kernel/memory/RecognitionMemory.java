@@ -1180,7 +1180,7 @@ public class RecognitionMemory {
     // but once the WMEs are resolved, this should free the
     // memory, as opposed to lead to a "leak"
     if (wma.wma_enabled()
-        && !s.isa_context_slot
+        && !s.isContextSlot()
         && (s.changed == null)
         && (s.wma_val_references != null)) {
       s.wma_val_references.clear();
@@ -1188,7 +1188,7 @@ public class RecognitionMemory {
 
     tempMemory.mark_slot_as_changed(s);
 
-    if (wma.wma_enabled() && !s.isa_context_slot) {
+    if (wma.wma_enabled() && !s.isContextSlot()) {
       var exists = pref.slot.getWmes().stream().anyMatch(wme -> wme.getValue() == pref.value);
 
       // if wme exists, it should already have been updated
@@ -1222,7 +1222,7 @@ public class RecognitionMemory {
 
     // if acceptable/require pref for context slot, we may need to add a wme
     // later
-    if (s.isa_context_slot
+    if (s.isContextSlot()
         && (pref.type == PreferenceType.ACCEPTABLE || pref.type == PreferenceType.REQUIRE)) {
       decider.mark_context_slot_as_acceptable_preference_changed(s);
     }
@@ -1250,7 +1250,7 @@ public class RecognitionMemory {
     tempMemory.mark_slot_as_changed(s);
 
     /// if acceptable/require pref for context slot, we may need to remove a wme later
-    if ((s.isa_context_slot)
+    if ((s.isContextSlot())
         && ((pref.type == PreferenceType.ACCEPTABLE) || (pref.type == PreferenceType.REQUIRE))) {
       decider.mark_context_slot_as_acceptable_preference_changed(s);
     }
