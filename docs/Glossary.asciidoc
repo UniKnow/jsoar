@@ -13,5 +13,8 @@ LTI:: Long Term Identifier
 [[TC]]
 TC:: Transitive Closure
 
+[[WMA]]
+WMA:: Working Memory Activation
+
 [[WME]]
 WME:: Working Memory Element
