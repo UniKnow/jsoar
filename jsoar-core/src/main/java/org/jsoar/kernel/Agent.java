@@ -321,14 +321,12 @@ public class Agent extends AbstractAdaptable implements AgentRunController {
    * <p>If called again, this function is equivalent to the "init-soar" command.
    */
   public void initialize() {
-    if (!initialized) {
-      // TODO Call automatically if any function that requires it is called?
-      init_agent_memory();
-      initialized = true;
-    } else {
-      reinitialize_soar();
-      init_agent_memory();
+    if (initialized) {
+      reinitializeSoar();
     }
+
+    inititializeAgentMemory();
+    initialized = true;
   }
 
   /**
@@ -431,12 +429,6 @@ public class Agent extends AbstractAdaptable implements AgentRunController {
    */
   public SoarEventManager getEvents() {
     return eventManager;
-  }
-
-  /** @deprecated */
-  @Deprecated(forRemoval = true)
-  public SoarEventManager getEventManager() {
-    return getEvents();
   }
 
   /**
@@ -702,7 +694,7 @@ public class Agent extends AbstractAdaptable implements AgentRunController {
    * @param wtt The WME trace level
    * @param mst The match set trace settings
    */
-  public void printMatchSet(Printer printer, WmeTraceType wtt, EnumSet<MatchSetTraceType> mst) {
+  public void printMatchSet(Printer printer, WmeTraceType wtt, Set<MatchSetTraceType> mst) {
     this.soarReteListener.print_match_set(printer, wtt, mst);
   }
 
@@ -715,7 +707,7 @@ public class Agent extends AbstractAdaptable implements AgentRunController {
   }
 
   /** init_soar.cpp:1374:init_agent_memory() */
-  private void init_agent_memory() {
+  private void inititializeAgentMemory() {
     // If there is already a top goal this function should probably not be called
     if (decider.topGoal() != null) {
       throw new IllegalStateException(
@@ -801,7 +793,7 @@ public class Agent extends AbstractAdaptable implements AgentRunController {
   }
 
   /** init_soar.cpp:350:reinitialize_soar */
-  private void reinitialize_soar() {
+  private void reinitializeSoar() {
     getEvents().fireEvent(new BeforeInitSoarEvent(this));
 
     // Temporarily disable tracing
@@ -856,7 +848,7 @@ public class Agent extends AbstractAdaptable implements AgentRunController {
     chunker.reset();
     wma.reset();
 
-    reset_statistics();
+    resetStatistics();
 
     // Restore trace state
     trace.setEnabled(traceState);
@@ -865,7 +857,7 @@ public class Agent extends AbstractAdaptable implements AgentRunController {
   }
 
   /** init_soar.cpp:297:reset_statistics */
-  private void reset_statistics() {
+  private void resetStatistics() {
     chunker.chunks_this_d_cycle = 0;
 
     productions.resetStatistics();
@@ -903,7 +895,7 @@ public class Agent extends AbstractAdaptable implements AgentRunController {
     a.getInterpreter().source(new File("../performance/count-test-single.soar"));
     // a.getInterpreter().source(new File("../performance/FunctionalTests_testArithmetic.soar"));
     // a.getInterpreter().source(new File("c:/veteran.soar"));
-    logger.info("\nLoaded " + a.getProductions().getProductionCount() + " rules");
+    logger.info("\nLoaded {} rules", a.getProductions().getProductionCount());
     a.getPrinter().flush();
     a.runFor(20000, RunType.DECISIONS);
     // a.runFor(40000, RunType.FOREVER);
@@ -914,7 +906,7 @@ public class Agent extends AbstractAdaptable implements AgentRunController {
   public static void main(String[] args) throws SoarException, InterruptedException {
     final List<Agent> agents = new ArrayList<>();
     for (var i = 0; i < 1; ++i) {
-      logger.info("\n#" + (i + 1));
+      logger.info("\n#{}", (i + 1));
       agents.add(agent());
     }
     while (true) {

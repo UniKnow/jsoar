@@ -610,7 +610,7 @@ public class ProductionCommand extends PicocliSoarCommand {
     @Override
     public void run() {
       WmeTraceType wmeTraceType = WmeTraceType.NONE;
-      EnumSet<MatchSetTraceType> mstt = EnumSet.allOf(MatchSetTraceType.class);
+      Set<MatchSetTraceType> mstt = EnumSet.allOf(MatchSetTraceType.class);
 
       if (includeWmes) {
         wmeTraceType = WmeTraceType.FULL;

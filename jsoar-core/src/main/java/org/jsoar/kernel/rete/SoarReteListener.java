@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import org.jsoar.kernel.Agent;
 import org.jsoar.kernel.Decider;
 import org.jsoar.kernel.DecisionCycle;
@@ -961,7 +962,7 @@ public class SoarReteListener implements ReteListener {
    * @param wtt
    * @param mst
    */
-  public void print_match_set(Printer printer, WmeTraceType wtt, EnumSet<MatchSetTraceType> mst) {
+  public void print_match_set(Printer printer, WmeTraceType wtt, Set<MatchSetTraceType> mst) {
     // Print assertions
     if (mst.contains(MatchSetTraceType.MS_ASSERT)) {
       printer.print("O Assertions:\n");
