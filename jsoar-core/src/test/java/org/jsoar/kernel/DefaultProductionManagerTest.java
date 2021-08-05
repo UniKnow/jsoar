@@ -19,7 +19,7 @@ import org.junit.Test;
 public class DefaultProductionManagerTest extends JSoarTest {
   private Agent agent;
   private ProductionManager pm;
-  /** @throws java.lang.Exception */
+
   @Before
   public void setUp() throws Exception {
     super.setUp();
@@ -27,7 +27,6 @@ public class DefaultProductionManagerTest extends JSoarTest {
     this.pm = this.agent.getProductions();
   }
 
-  /** @throws java.lang.Exception */
   @After
   public void tearDown() throws Exception {}
 
@@ -54,5 +53,19 @@ public class DefaultProductionManagerTest extends JSoarTest {
       throws ParserException, ReordererException {
     DefaultProductionManager productionManager = new DefaultProductionManager(mock(Agent.class));
     productionManager.loadProduction("productionBody", null);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testAddProductionThrowsExceptionIfDuplicateProduction()
+      throws ReordererException, ParserException {
+    // Given a production manager
+    // And a existing Production with name
+    final Production p =
+        pm.loadProduction(
+            "   testAddProductionThrowsExceptionIfDuplicateProduction (state <s> ^superstate nil) --> (<s> ^foo bar)");
+
+    // When adding similar production again
+    // Then exception should be thrown
+    pm.addProduction(p, false);
   }
 }

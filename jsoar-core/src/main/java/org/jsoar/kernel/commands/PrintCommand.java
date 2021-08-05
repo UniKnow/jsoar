@@ -15,7 +15,6 @@ import org.jsoar.kernel.learning.rl.ReinforcementLearningParams;
 import org.jsoar.kernel.memory.Wme;
 import org.jsoar.kernel.memory.WorkingMemoryPrinter;
 import org.jsoar.kernel.symbols.Symbol;
-import org.jsoar.kernel.tracing.Printer;
 import org.jsoar.util.adaptables.Adaptables;
 import org.jsoar.util.commands.PicocliSoarCommand;
 import picocli.CommandLine.Command;
@@ -36,6 +35,7 @@ public class PrintCommand extends PicocliSoarCommand {
     super(agent, new Print(agent));
   }
 
+  @Override
   public Print getCommand() {
     return (Print) super.getCommand();
   }
@@ -179,16 +179,19 @@ public class PrintCommand extends PicocliSoarCommand {
     @Override
     public void run() {
       if (printGDS) {
-        String result =
-            "********************* Current GDS **************************\n"
-                + "stepping thru all wmes in rete, looking for any that are in a gds...\n";
+        StringBuilder result =
+            new StringBuilder(
+                """
+                ********************* Current GDS **************************
+                stepping thru all wmes in rete, looking for any that are in a gds...
+                """);
 
         // the command outputs two lists of wmes:
         //  the wme-only list, which is in bottom-to-top order by goal
         //  the goal list, which is in top-to-bottom order by goal
 
         final List<Goal> goalsTopToBottom = agent.getGoalStack();
-        final List<Goal> goalsBottomtoTop = new ArrayList<Goal>(goalsTopToBottom);
+        final List<Goal> goalsBottomtoTop = new ArrayList<>(goalsTopToBottom);
         Collections.reverse(goalsBottomtoTop);
 
         // list wmes from goals in bottom-to-top order
@@ -201,33 +204,38 @@ public class PrintCommand extends PicocliSoarCommand {
           final Iterator<Wme> itr = gds.getWmes();
           while (itr.hasNext()) {
             final Wme w = itr.next();
-            result += "  For Goal  " + goal.toString() + "  " + w.toString() + "\n";
+            result
+                .append("  For Goal  ")
+                .append(goal)
+                .append("  ")
+                .append(w.toString())
+                .append("\n");
           }
         }
 
-        result += "************************************************************\n";
+        result.append("************************************************************\n");
 
         // list goals with wmes in top-to-bottom order
         for (final Goal goal : goalsTopToBottom) {
-          result += "  For Goal  " + goal.toString();
+          result.append("  For Goal  ").append(goal.toString());
           final GoalDependencySet gds = Adaptables.adapt(goal, GoalDependencySet.class);
           if (gds == null) {
-            result += "  : No GDS for this goal.\n";
+            result.append("  : No GDS for this goal.\n");
             continue;
           }
 
-          result += "\n";
+          result.append("\n");
 
           final Iterator<Wme> itr = gds.getWmes();
           while (itr.hasNext()) {
             final Wme w = itr.next();
-            result += "                " + w.toString() + "\n";
+            result.append("                ").append(w.toString()).append("\n");
           }
         }
 
-        result += "************************************************************\n";
+        result.append("************************************************************\n");
 
-        agent.getPrinter().print(result);
+        agent.getPrinter().print(result.toString());
       }
 
       depth = defaultDepth;
@@ -265,7 +273,7 @@ public class PrintCommand extends PicocliSoarCommand {
       }
 
       if (params != null) {
-        String argString = String.join(" ", params);
+        var argString = String.join(" ", params);
 
         // Test if the parameter(s) passed is a symbol or pattern
         Symbol arg = agent.readIdentifierOrContextVariable(argString);
@@ -289,7 +297,7 @@ public class PrintCommand extends PicocliSoarCommand {
 
         // Test if the parameter passed is a timetag
         try {
-          int tt = Integer.parseInt(argString);
+          var tt = Integer.parseInt(argString);
           for (Wme wme : agent.getAllWmesInRete()) {
             // TODO: Print full object, not just wme
             if (wme.getTimetag() == tt) {
@@ -309,7 +317,7 @@ public class PrintCommand extends PicocliSoarCommand {
           printFullProd = true;
         }
 
-        Production p = agent.getProductions().getProduction(argString);
+        var p = agent.getProductions().getProduction(argString);
         if (p != null) {
           do_print_for_production(p);
         } else {
@@ -342,7 +350,7 @@ public class PrintCommand extends PicocliSoarCommand {
     }
 
     private void do_print_for_production(Production prod) {
-      final Printer p = agent.getPrinter();
+      final var p = agent.getPrinter();
 
       if (printFilename) {
         if (printFullProd) {
@@ -377,7 +385,7 @@ public class PrintCommand extends PicocliSoarCommand {
 
     private List<Production> collectProductions() {
       final ProductionManager pm = agent.getProductions();
-      final List<Production> result = new ArrayList<Production>();
+      final List<Production> result = new ArrayList<>();
 
       if (printChunks) result.addAll(pm.getProductions(ProductionType.CHUNK));
       if (printUserProds) result.addAll(pm.getProductions(ProductionType.USER));
@@ -389,10 +397,7 @@ public class PrintCommand extends PicocliSoarCommand {
     }
 
     private boolean checkDepth(int depth) {
-      if (depth <= 0) {
-        return false;
-      }
-      return true;
+      return depth > 0;
     }
 
     public void setDefaultDepth(int depth) throws SoarException {

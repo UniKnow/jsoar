@@ -60,16 +60,16 @@ public class DefaultProductionManager implements ProductionManager {
    */
   @Getter @Setter @NonNull private Parser parser = new OriginalParser();
 
-  private EnumMap<ProductionType, Set<Production>> productionsByType =
-      new EnumMap<ProductionType, Set<Production>>(ProductionType.class);
+  private final EnumMap<ProductionType, Set<Production>> productionsByType =
+      new EnumMap<>(ProductionType.class);
 
   {
     for (ProductionType type : ProductionType.values()) {
-      productionsByType.put(type, new LinkedHashSet<Production>());
+      productionsByType.put(type, new LinkedHashSet<>());
     }
   }
 
-  private Map<String, Production> productionsByName = new HashMap<String, Production>();
+  private final Map<String, Production> productionsByName = new HashMap<>();
 
   public DefaultProductionManager(Agent context) {
     this.context = context;
@@ -156,9 +156,9 @@ public class DefaultProductionManager implements ProductionManager {
     List<Production> result;
     if (type != null) {
       Set<Production> ofType = productionsByType.get(type);
-      result = new ArrayList<Production>(ofType);
+      result = new ArrayList<>(ofType);
     } else {
-      result = new ArrayList<Production>(getProductionCount());
+      result = new ArrayList<>(getProductionCount());
       for (Set<Production> ofType : productionsByType.values()) {
         result.addAll(ofType);
       }
@@ -182,8 +182,8 @@ public class DefaultProductionManager implements ProductionManager {
   public Production loadProduction(String productionBody, @NonNull SourceLocation location)
       throws ReordererException, ParserException {
     this.currentSourceLocation = location;
-    final StringReader reader = new StringReader(productionBody);
-    final Production p = parser.parseProduction(parserContext, reader);
+    final var reader = new StringReader(productionBody);
+    final var p = parser.parseProduction(parserContext, reader);
 
     if (p.getType() == ProductionType.CHUNK || p.getType() == ProductionType.JUSTIFICATION) {
       addChunk(p);
@@ -198,7 +198,7 @@ public class DefaultProductionManager implements ProductionManager {
    */
   public ProductionAddResult addProduction(Production p, boolean reorder_nccs)
       throws ReordererException {
-    if (productionsByName.values().contains(p)) {
+    if (productionsByName.containsValue(p)) {
       throw new IllegalArgumentException("Production instance '" + p + " already added.");
     }
     if (p.getType() == ProductionType.CHUNK || p.getType() == ProductionType.JUSTIFICATION) {
@@ -209,7 +209,7 @@ public class DefaultProductionManager implements ProductionManager {
     // Note, in csoar, this test was done in parse_production as soon as the name
     // of the production was known. We do this here so we can eliminate the
     // production field of StringSymbolImpl.
-    Production existing = getProduction(p.getName());
+    var existing = getProduction(p.getName());
     if (existing != null) {
       exciseProduction(existing, context.getTrace().isEnabled(Category.LOADING));
     }
@@ -269,8 +269,7 @@ public class DefaultProductionManager implements ProductionManager {
    */
   @Override
   public Map<ProductionType, Integer> getProductionCounts() {
-    Map<ProductionType, Integer> counts =
-        new EnumMap<ProductionType, Integer>(ProductionType.class);
+    Map<ProductionType, Integer> counts = new EnumMap<>(ProductionType.class);
     for (ProductionType type : ProductionType.values()) {
       counts.put(type, 0);
     }
