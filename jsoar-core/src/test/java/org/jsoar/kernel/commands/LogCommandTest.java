@@ -438,29 +438,29 @@ public class LogCommandTest {
             "^\\n\\[INFO .+?\\] default: This is a simple test case\\.$", outputWriter.toString()));
   }
 
-  /**
-   * This is just a performance test for when nothing should be logged. It shouldn't fail unless
-   * other tests here also fail.
-   */
-  @Test
-  public void testPerformance() throws SoarException {
-    logManager.setLogLevel(LogLevel.warn);
-
-    // warm up the jvm so we get more stable times
-    for (int i = 0; i < 1000; i++) {
-      logCommand.execute(
-          DefaultSoarCommandContext.empty(),
-          new String[] {"log", "trace", "This", "is", "a", "simple", "test", "case."});
-    }
-
-    long start = System.currentTimeMillis();
-    for (int i = 0; i < 100000; i++) {
-      logCommand.execute(
-          DefaultSoarCommandContext.empty(),
-          new String[] {"log", "trace", "This", "is", "a", "simple", "test", "case."});
-    }
-    long end = System.currentTimeMillis();
-
-    System.out.println("Total log time: " + (end - start) / 1000.0);
-  }
+//  /**
+//   * This is just a performance test for when nothing should be logged. It shouldn't fail unless
+//   * other tests here also fail.
+//   */
+//  @Test
+//  public void testPerformance() throws SoarException {
+//    logManager.setLogLevel(LogLevel.warn);
+//
+//    // warm up the jvm so we get more stable times
+//    for (int i = 0; i < 1000; i++) {
+//      logCommand.execute(
+//          DefaultSoarCommandContext.empty(),
+//          new String[] {"log", "trace", "This", "is", "a", "simple", "test", "case."});
+//    }
+//
+//    long start = System.currentTimeMillis();
+//    for (int i = 0; i < 100000; i++) {
+//      logCommand.execute(
+//          DefaultSoarCommandContext.empty(),
+//          new String[] {"log", "trace", "This", "is", "a", "simple", "test", "case."});
+//    }
+//    long end = System.currentTimeMillis();
+//
+//    System.out.println("Total log time: " + (end - start) / 1000.0);
+//  }
 }
