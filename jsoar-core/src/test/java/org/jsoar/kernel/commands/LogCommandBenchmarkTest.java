@@ -1,6 +1,5 @@
 package org.jsoar.kernel.commands;
 
-
 import java.io.StringWriter;
 import java.util.concurrent.TimeUnit;
 import org.jsoar.kernel.Agent;
@@ -42,7 +41,7 @@ public class LogCommandBenchmarkTest extends AbstractBenchmark {
 
   @Test
   public void launchBenchmarkLogMessage() throws Exception {
-    launchBenchmark(this.getClass().getName() + ".logMessage", 200, 0.10);
+    launchBenchmark(this.getClass().getName() + ".logMessage", 250, 0.20);
   }
 
   /** This is just a performance test for when nothing should be logged. */
@@ -58,5 +57,4 @@ public class LogCommandBenchmarkTest extends AbstractBenchmark {
         DefaultSoarCommandContext.empty(),
         new String[] {"log", "trace", "This", "is", "a", "simple", "test", "case."});
   }
-
 }
