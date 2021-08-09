@@ -10,13 +10,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class LogManager {
 
   private final Agent agent;
+
   private EchoMode echoMode = EchoMode.on;
+
   private boolean active = true;
   private boolean strict = false;
   private boolean abbreviate = true;
@@ -40,76 +43,39 @@ public class LogManager {
   }
 
   public enum SourceLocationMethod {
-    none("NONE"),
-    disk("DISK"),
-    stack("STACK");
+    none,
+    disk,
+    stack;
 
-    private static Map<String, SourceLocationMethod> sourceLocationMethodStrings;
-
-    static {
-      sourceLocationMethodStrings = new HashMap<>();
-      sourceLocationMethodStrings.put("NONE", none);
-      sourceLocationMethodStrings.put("DISK", disk);
-      sourceLocationMethodStrings.put("STACK", stack);
-    }
-
-    private String stringValue;
-
-    SourceLocationMethod(String stringValue) {
-      this.stringValue = stringValue;
-    }
-
-    public static SourceLocationMethod fromString(String sourceLocationMethod) {
-      var val = sourceLocationMethodStrings.get(sourceLocationMethod.toUpperCase());
-      if (val == null) {
-        throw new IllegalArgumentException();
-      }
-      return val;
-    }
+    public static SourceLocationMethod fromString(@NonNull String sourceLocationMethod) {
+      return SourceLocationMethod.valueOf(sourceLocationMethod.toLowerCase());    }
 
     @Override
     public String toString() {
-      return stringValue;
+      return name();
     }
   }
 
   public enum LogLevel {
-    trace("TRACE", 1),
-    debug("DEBUG", 2),
-    info("INFO", 3),
-    warn("WARN", 4),
-    error("ERROR", 5);
+    trace(1),
+    debug(2),
+    info(3),
+    warn(4),
+    error(5);
 
-    private static Map<String, LogLevel> logLevelStrings;
+    private final int numericValue;
 
-    static {
-      logLevelStrings = new HashMap<>();
-      logLevelStrings.put("INFO", info);
-      logLevelStrings.put("DEBUG", debug);
-      logLevelStrings.put("WARN", warn);
-      logLevelStrings.put("TRACE", trace);
-      logLevelStrings.put("ERROR", error);
-    }
-
-    private String stringValue;
-    private int numericValue;
-
-    LogLevel(String stringValue, int numericValue) {
-      this.stringValue = stringValue;
+    LogLevel(int numericValue) {
       this.numericValue = numericValue;
     }
 
-    public static LogLevel fromString(String logLevel) {
-      var val = logLevelStrings.get(logLevel.toUpperCase());
-      if (val == null) {
-        throw new IllegalArgumentException();
-      }
-      return val;
+    public static LogLevel fromString(@NonNull String logLevel) {
+      return LogLevel.valueOf(logLevel.toLowerCase());
     }
 
     @Override
     public String toString() {
-      return stringValue;
+      return name();
     }
 
     public boolean wouldAcceptLogLevel(LogLevel logLevel) {
@@ -118,36 +84,17 @@ public class LogManager {
   }
 
   public enum EchoMode {
-    off("OFF"),
-    simple("SIMPLE"),
-    on("ON");
+    off,
+    simple,
+    on;
 
-    private static Map<String, EchoMode> echoModeStrings;
-
-    static {
-      echoModeStrings = new HashMap<>();
-      echoModeStrings.put("OFF", off);
-      echoModeStrings.put("SIMPLE", simple);
-      echoModeStrings.put("ON", on);
-    }
-
-    private String stringValue;
-
-    EchoMode(String stringValue) {
-      this.stringValue = stringValue;
-    }
-
-    public static EchoMode fromString(String echoMode) {
-      var val = echoModeStrings.get(echoMode.toUpperCase());
-      if (val == null) {
-        throw new IllegalArgumentException();
-      }
-      return val;
+    public static EchoMode fromString(@NonNull String echoMode) {
+      return EchoMode.valueOf(echoMode.toLowerCase());
     }
 
     @Override
     public String toString() {
-      return stringValue;
+      return name();
     }
   }
 
@@ -162,7 +109,7 @@ public class LogManager {
     loggers.put("default", LoggerFactory.getLogger("default"));
   }
 
-  public Logger getLogger(String loggerName) throws LoggerException {
+  public Logger getLogger(@NonNull String loggerName) throws LoggerException {
     var logger = loggers.get(loggerName);
     if (logger == null) {
       if (strict) {
@@ -202,7 +149,7 @@ public class LogManager {
   }
 
   public String getLoggerStatus() {
-    StringBuilder result = new StringBuilder();
+    var result = new StringBuilder();
     result.append("      Log Settings     \n");
     result.append("=======================\n");
     result.append("logging:           " + (isActive() ? "on" : "off") + "\n");
@@ -234,16 +181,21 @@ public class LogManager {
 
     String result = formatArguments(args, collapse);
 
-    if (logLevel == LogLevel.debug) {
-      logger.debug(result);
-    } else if (logLevel == LogLevel.info) {
-      logger.info(result);
-    } else if (logLevel == LogLevel.warn) {
-      logger.warn(result);
-    } else if (logLevel == LogLevel.trace) {
-      logger.trace(result);
-    } else {
-      logger.error(result);
+    switch (logLevel) {
+      case trace:
+        logger.trace(result);
+        break;
+      case debug:
+        logger.debug(result);
+        break;
+      case info:
+        logger.info(result);
+        break;
+      case warn:
+        logger.warn(result);
+        break;
+      default:
+        logger.error(result);
     }
 
     if (echoMode != EchoMode.off

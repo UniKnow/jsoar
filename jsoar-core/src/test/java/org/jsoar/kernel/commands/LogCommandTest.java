@@ -363,6 +363,10 @@ public class LogCommandTest {
         .log("loggerName", LogLevel.info, Collections.singletonList("Log message"), false);
   }
 
+  public void testLogMessageIgnoredIfLogLevelDisabled() {
+    // todo
+  }
+
   @Test
   public void testLogMessageWithoutLoggerName() throws SoarException, LoggerException {
     // Given a agent
