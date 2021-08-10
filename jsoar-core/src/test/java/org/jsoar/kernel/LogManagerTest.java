@@ -199,10 +199,10 @@ public class LogManagerTest {
   @Test
   public void testGetSourceLocationMethodFromString() {
     for (SourceLocationMethod locationMethod : SourceLocationMethod.values()) {
-      assertEquals(locationMethod,
-          SourceLocationMethod.fromString(locationMethod.toString().toLowerCase()));
-      assertEquals(locationMethod,
-          SourceLocationMethod.fromString(locationMethod.toString().toUpperCase()));
+      assertEquals(
+          locationMethod, SourceLocationMethod.fromString(locationMethod.toString().toLowerCase()));
+      assertEquals(
+          locationMethod, SourceLocationMethod.fromString(locationMethod.toString().toUpperCase()));
     }
   }
 
@@ -214,10 +214,8 @@ public class LogManagerTest {
   @Test
   public void testGetEchoModeFromString() {
     for (EchoMode echoMode : EchoMode.values()) {
-      assertEquals(echoMode,
-          EchoMode.fromString(echoMode.toString().toLowerCase()));
-      assertEquals(echoMode,
-          EchoMode.fromString(echoMode.toString().toUpperCase()));
+      assertEquals(echoMode, EchoMode.fromString(echoMode.toString().toLowerCase()));
+      assertEquals(echoMode, EchoMode.fromString(echoMode.toString().toUpperCase()));
     }
   }
 
@@ -245,8 +243,7 @@ public class LogManagerTest {
   }
 
   @Test
-  public void testGetLoggerIfNonExisting()
-      throws LoggerException {
+  public void testGetLoggerIfNonExisting() throws LoggerException {
     // Given a log manager
     LogManager logManager = agent.getLogManager();
 
@@ -256,7 +253,6 @@ public class LogManagerTest {
 
     // Then new logger is returned
     assertNotNull(logger);
-    assertEquals(numberOfLoggers+1, logManager.getLoggerCount());
+    assertEquals(numberOfLoggers + 1, logManager.getLoggerCount());
   }
-
 }

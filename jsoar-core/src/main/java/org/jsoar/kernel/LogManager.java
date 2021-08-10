@@ -48,11 +48,12 @@ public class LogManager {
     stack;
 
     public static SourceLocationMethod fromString(@NonNull String sourceLocationMethod) {
-      return SourceLocationMethod.valueOf(sourceLocationMethod.toLowerCase());    }
+      return SourceLocationMethod.valueOf(sourceLocationMethod.toLowerCase());
+    }
 
     @Override
     public String toString() {
-      return name();
+      return name().toUpperCase();
     }
   }
 
@@ -75,7 +76,7 @@ public class LogManager {
 
     @Override
     public String toString() {
-      return name();
+      return name().toUpperCase();
     }
 
     public boolean wouldAcceptLogLevel(LogLevel logLevel) {
